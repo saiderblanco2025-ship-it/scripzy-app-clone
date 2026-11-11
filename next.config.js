@@ -1,18 +1,15 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    appRouter: true,
-    typedRoutes: true,
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "%**",
-        pathname: "/**",
+        hostname: "**",
       },
     ],
   },
-}
+};

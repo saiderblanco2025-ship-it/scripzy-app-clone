@@ -1,156 +1,52 @@
 "use client";
 
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
-export interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
-  open?: boolean;
+export interface DialogProps {
+  open: boolean;
   onOpenChange?: (open: boolean) => void;
-}
-
-export interface DialogTriggerProps extends React.HTMLAttributes<HTMLDivElement> {
-  asChild?: boolean;
-}
-
-export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  open?: boolean;
-}
-
-export interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  title?: string;
+  children: React.ReactNode;
   className?: string;
 }
 
-export interface DialogTitleProps extends React.HTMLAttributes<HTMLTitleElement> {
-  className?: string;
-}
+/** Modal simple controlado */
+export function Dialog({ open, onOpenChange, title, children, className }: DialogProps) {
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onOpenChange?.(false);
+    }
+    if (open) document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onOpenChange]);
 
-export const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
-  ({ className, open: controlledOpen, onOpenChange, children, ...props }, ref) => {
-    const [isOpen, setIsOpen] = React.useState(controlledOpen ?? false);
+  if (!open) return null;
 
-    React.useEffect(() => {
-      if (controlledOpen !== undefined) {
-        setIsOpen(controlledOpen);
-      }
-    }, [controlledOpen]);
-
-    return (
-      <Slot
-        asChild
-        ref={ref}
-        mount={isOpen}
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={() => onOpenChange?.(false)}
+      />
+      <div
         className={cn(
-          "fixed inset-0 z-50",
+          "relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-xl",
           className
         )}
       >
-        <div
-          className={cn(
-            "fixed inset-0 z-50 transition-opacity",
-            "data-[state=open]:opacity-100",
-            "data-[state=closed]:opacity-0"
-          )}
-        >
-          <div
-            className={cn(
-              "absolute top-0 left-0 right-0 bottom-0 bg-black/50 backdrop-blur-sm",
-            )}
+        {title && <h2 className="mb-4 text-lg font-semibold text-slate-100">{title}</h2>}
+        {children}
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onOpenChange?.(false)}
+            className="rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
           >
-            {/* Background click to close */}
-            <div
-              onClick={(e: React.MouseEvent) => {
-                if (e.target === e.currentTarget) {
-                  setIsOpen(false);
-                  onOpenChange?.(false);
-                }
-              }}
-            />
-          </div>
-
-          <Slot
-            asChild
-            placement="center"
-            className={cn(
-              "relative transform overflow-hidden rounded-lg bg-white px-4 py-6 shadow-lg text-left transition-all data-[state=closed]:scale-95 data-[state=closed]:duration-200",
-              "data-[state=open]:scale-100 data-[state=open]:duration-300",
-              className
-            )}
-          >
-            {children}
-          </Slot>
+            Cerrar
+          </button>
         </div>
-      </Slot>
-    );
-  }
-);
-Dialog.displayName = "Dialog";
-
-/** DialogTrigger - the element that opens the dialog */
-export const DialogTrigger = React.forwardRef<HTMLDivElement, DialogTriggerProps>(
-  ({ className, asChild = true, children, ...props }, ref) => {
-    return (
-      <Slot
-        asChild
-        mount={true}
-        className={cn(className)}
-        ref={ref}
-      >
-        {asChild ? (
-          <div>{children}</div>
-        ) : (
-          <div>{children}</div>
-        )}
-      </Slot>
-    );
-  }
-);
-DialogTrigger.displayName = "DialogTrigger";
-
-/** DialogContent - the dialog panel */
-export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
-  ({ className, open: controlledOpen, children, ...props }, ref) => {
-    const [isOpen, setIsOpen] = React.useState(controlledOpen ?? true);
-
-    return (
-      <Slot
-        asChild
-        mount={isOpen}
-        className={cn(
-          "relative w-full max-w-lg transform overflow-hidden rounded-lg bg-white p-6 shadow-lg text-left transition-all sm:rounded-2xl",
-          "data-[state=closed]:scale-95 data-[state=closed]:duration-200",
-          "data-[state=open]:scale-100 data-[state=open]:duration-300",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </Slot>
-    );
-  }
-);
-DialogContent.displayName = "DialogContent";
-
-/** DialogHeader - the dialog header section */
-export const DialogHeader = React.forwardRef<HTMLDivElement, DialogHeaderProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <div ref={ref} className={cn("flex flex-col space-y-2 pt-2", className)} {...props}>
-        {children}
       </div>
-    );
-  }
-);
-DialogHeader.displayName = "DialogHeader";
-
-/** DialogTitle - the dialog title */
-export const DialogTitle = React.forwardRef<HTMLTitleElement, DialogTitleProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <title ref={ref} className={cn("text-lg font-semibold", className)} {...props}>
-        {children}
-      </title>
-    );
-  }
-);
-DialogTitle.displayName = "DialogTitle";
+    </div>
+  );
+}

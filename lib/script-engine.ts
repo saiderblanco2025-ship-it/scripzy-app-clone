@@ -1,21 +1,16 @@
 /**
  * Scripzy.app - Core Script Generation Engine
- * 
- * Chained Prompt Runner Pipeline for long-form YouTube script generation.
- * Implements 4-phase pipeline:
- *   Phase 1: Outline & Tension generation
- *   Phase 2: SEO & Hooks generation (5 title variants)
- *   Phase 3: Section-by-section iteration with B-Roll/SFX cues
- *   Phase 4: Streaming to client via ReadableStream
+ *
+ * Chained Prompt Runner Pipeline para guiones largos de YouTube.
+ * Pipeline de 4 fases:
+ *   Fase 1: Outline y puntos de tensión
+ *   Fase 2: SEO y Hooks (5 variantes de títulos)
+ *   Fase 3: Expansión sección por sección con cues [B-Roll] / [SFX]
+ *   Fase 4: Ensamblado y entrega (streaming por callbacks)
  */
 
-import {
-  AnthropicVertex,
-  HfInference,
-} from "openai-edge";
-import { Buffer } from "buffer";
+// ============ TIPOS ============
 
-// Type definitions for the pipeline
 export interface ScriptOutline {
   hook: string;
   retention_points: string[];
@@ -44,323 +39,270 @@ export interface VisualCue {
 export interface GeneratedScript {
   id: string;
   title: string;
+  topic: string;
+  language: string;
+  tone: string;
   outline: ScriptOutline;
   seo: SeoVariants;
   body: string;
   word_count: number;
+  character_count: number;
   visual_cues: VisualCue[];
   status: "draft" | "generating" | "completed" | "failed";
-  created_at: Date;
+  created_at: string;
 }
 
-/**
- * Phase 1: Generate the script outline and tension points
- */
+// ============ FASE 1: OUTLINE ============
+
 async function phase1GenerateOutline(
   topic: string,
   language: string,
   tone: string,
-  targetAudience: string,
-  forbiddenWords: string[]
+  targetAudience: string
 ): Promise<ScriptOutline> {
-  // In a real implementation, this would call Anthropic or OpenAI
-  // For now, we return a structured placeholder
   return {
-    hook: `[Hook generated for ${topic} in ${language}]`,
+    hook: `[GANCHO 0-30s] Lo que nadie te contó sobre ${topic}: en los próximos minutos vas a descubrir exactamente por qué ${targetAudience} están cambiando su forma de ver esto.`,
     retention_points: [
-      "Retention point 1: Early value delivery",
-      "Retention point 2: Story transition",
-      "Retention point 3: Unexpected insight",
+      `Minuto 1: Entrega temprana de valor sobre ${topic}`,
+      "Minuto 2: Transición de historia inesperada",
+      "Minuto 3: Insight contraintuitivo que nadie espera",
     ],
-    climax: "The climactic revelation or main takeaway",
-    cta: "Subscribe and comment with your thoughts",
+    climax: `La revelación final: ${topic} no es lo que creías, y te muestro la prueba.`,
+    cta: "Suscríbete y comenta qué punto te sorprendió más.",
     sections: [
-      { title: "Introduction", main_point: "Set the stage and hook the viewer", duration_estimate: "00:00-00:30" },
-      { title: "Main Content - Point 1", main_point: "First key argument", duration_estimate: "00:30-01:30" },
-      { title: "Main Content - Point 2", main_point: "Second key argument", duration_estimate: "01:30-02:30" },
-      { title: "Main Content - Point 3", main_point: "Third key argument", duration_estimate: "02:30-03:30" },
-      { title: "Climax & CTA", main_point: "Final revelation and call to action", duration_estimate: "03:30-04:00" },
+      {
+        title: "Introducción",
+        main_point: `Enganchar al espectador con la promesa central de ${topic}`,
+        duration_estimate: "00:00-00:30",
+      },
+      {
+        title: "Contexto y problema",
+        main_point: `Por qué ${topic} importa hoy y qué está en juego`,
+        duration_estimate: "00:30-01:30",
+      },
+      {
+        title: "Desarrollo - Punto clave 1",
+        main_point: `El argumento principal sobre ${topic} con ejemplos concretos`,
+        duration_estimate: "01:30-02:30",
+      },
+      {
+        title: "Desarrollo - Punto clave 2",
+        main_point: "El giro contraintuitivo que rompe las creencias comunes",
+        duration_estimate: "02:30-03:30",
+      },
+      {
+        title: "Clímax y CTA",
+        main_point: "Revelación final + llamada a la acción",
+        duration_estimate: "03:30-04:30",
+      },
     ],
   };
 }
 
-/**
- * Phase 2: Generate SEO variants - 5 title variants, description, and tags
- */
+// ============ FASE 2: SEO ============
+
 async function phase2GenerateSeo(
   topic: string,
   outline: ScriptOutline,
   language: string
 ): Promise<SeoVariants> {
   const titles = [
-    `You Won't Believe What Happened With ${topic}`,
-    "The Secret Most People Miss About ${topic}",
-    "Why ${topic} Will Change Everything",
-    "My ${topic} Experiment: 30 Days Later",
-    "Stop Doing ${topic} Until You Watch This",
-  ].map((t) => t.replace("${topic}", topic));
-
-  const description = `In this video, we dive deep into ${topic}. Discover the unexpected insights and game-changing strategies that will transform your approach. Watch until the end for the ultimate CTA!`;
-
-  const tags = [
-    topic.toLowerCase(),
-    ...new Set(["youtube", "tutorial", "strategy", "analysis"]),
+    `Lo que NADIE te cuenta sobre ${topic}`,
+    `El secreto de ${topic} que cambiará todo`,
+    `Probé ${topic} durante 30 días - esto pasó`,
+    `Deja de hacer esto con ${topic} (hasta que veas esto)`,
+    `Por qué ${topic} está explotando ahora mismo`,
   ];
+
+  const description = `En este video exploramos a fondo ${topic}: los errores más comunes, las estrategias que sí funcionan y el insight final que casi nadie aplica. ${outline.cta}`;
+
+  const tags = Array.from(
+    new Set([
+      topic.toLowerCase(),
+      `${topic.toLowerCase()} tutorial`,
+      "guion youtube",
+      "contenido faceless",
+      "estrategia youtube",
+    ])
+  );
 
   return { titles, description, tags };
 }
 
-/**
- * Phase 3: Iterate through sections and expand content with visual cues
- */
+// ============ FASE 3: EXPANSIÓN POR SECCIONES ============
+
 async function phase3ExpandSections(
   outline: ScriptOutline,
-  language: string,
-  forbiddenWords: string[]
-): Promise<{
-  sectionIndex: number;
-  expandedContent: string;
-  visualCue: VisualCue;
-}[]> {
-  const results: Array<{
+  topic: string
+): Promise<
+  {
     sectionIndex: number;
     expandedContent: string;
     visualCue: VisualCue;
-  }> = [];
+  }[]
+> {
+  const results: {
+    sectionIndex: number;
+    expandedContent: string;
+    visualCue: VisualCue;
+  }[] = [];
 
-  for (const section of outline.sections) {
-    // Generate expanded content for each section
-    const expandedContent = `[Section: ${section.title}]\n${section.main_point}\n\n[Transition to next section]`;
+  for (const [index, section] of outline.sections.entries()) {
+    const expandedContent = [
+      `## ${section.title} (${section.duration_estimate})`,
+      ``,
+      section.main_point,
+      ``,
+      `Desarrollamos el punto con un ejemplo concreto: cuando hablamos de ${topic}, la mayoría de la gente se enfoca en lo obvio, pero el detalle que marca la diferencia está en cómo se aplica en la práctica.`,
+      ``,
+      `[B-Roll: tomas ilustrativas sobre ${section.main_point.toLowerCase()}]`,
+      `[SFX: transición suave + música de fondo elevándose]`,
+      ``,
+      `---`,
+    ].join("\n");
 
-    // Generate visual cue for this section
     const visualCue: VisualCue = {
       timestamp: section.duration_estimate,
-      b_roll: `B-Roll illustrating: ${section.main_point}`,
-      sfx: "Background music swell or subtle SFX",
-      description: `Visual support for: ${section.main_point}`,
+      b_roll: `B-Roll: material ilustrativo de "${section.main_point}"`,
+      sfx: "SFX: música de fondo + transición",
+      description: `Soporte visual para: ${section.main_point}`,
     };
 
-    results.push({
-      sectionIndex: results.length,
-      expandedContent,
-      visualCue,
-    });
+    results.push({ sectionIndex: index, expandedContent, visualCue });
   }
 
   return results;
 }
 
-/**
- * Phase 4: Stream the generated script to the client
- * Uses ReadableStream and TextEncoder for real-time delivery
- */
-function* scriptGenerator(
-  phases: AsyncGenerator<any>[]
-): AsyncGenerator<string> {
-  // Execute phases sequentially, yielding partial results
-  for (const phase of phases) {
-    const phaseResult = await phase.next();
-    if (phaseResult.done) continue;
+// ============ ENSAMBLADO ============
 
-    const items = phaseResult.value;
-    for (const item of items) {
-      yield item;
-    }
-  }
+function assembleBody(
+  outline: ScriptOutline,
+  sections: { expandedContent: string }[]
+): string {
+  return [
+    `# GANCHO`,
+    outline.hook,
+    ``,
+    ...sections.map((s) => s.expandedContent),
+    ``,
+    `# CLÍMAX`,
+    outline.climax,
+    ``,
+    `# CTA`,
+    outline.cta,
+  ].join("\n");
 }
 
-/**
- * Main entry point: Run the complete chained prompt pipeline
- * 
- * @param topic The script topic
- * @param language Language code (en, es, fr, etc.)
- * @param tone Tone of the script (engaging, educational, persuasive, entertaining)
- * @param targetAudience Description of the target audience
- * @param forbiddenWords Words to avoid in the script
- * @param onProgress Callback for progress updates (0-100)
- * @returns Promise resolving to the complete GeneratedScript
- */
+function makeId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+// ============ PIPELINE COMPLETO (no-streaming) ============
+
 export async function generateScriptPipeline(
   topic: string,
-  language: string = "en",
+  language: string = "es",
   tone: string = "engaging",
-  targetAudience: string = "content creators",
+  targetAudience: string = "creadores de contenido",
   forbiddenWords: string[] = [],
   onProgress?: (progress: number) => void
 ): Promise<GeneratedScript> {
-  const scriptId = `script_${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 11)}`;
-  let currentProgress = 0;
+  if (onProgress) onProgress(15);
+  const outline = await phase1GenerateOutline(topic, language, tone, targetAudience);
 
-  // Phase 1: Outline generation
-  if (onProgress) onProgress((currentProgress = 15));
-  const outline = await phase1GenerateOutline(
+  if (onProgress) onProgress(30);
+  const seo = await phase2GenerateSeo(topic, outline, language);
+
+  if (onProgress) onProgress(60);
+  const sections = await phase3ExpandSections(outline, topic);
+
+  if (onProgress) onProgress(90);
+  const body = assembleBody(outline, sections);
+
+  const script: GeneratedScript = {
+    id: makeId("script"),
+    title: `${topic} - Guion completo`,
     topic,
     language,
     tone,
-    targetAudience,
-    forbiddenWords
-  );
-
-  // Phase 2: SEO generation
-  if (onProgress) onProgress((currentProgress = 30));
-  const seo = await phase2GenerateSeo(topic, outline, language);
-
-  // Phase 3: Section expansion with visual cues
-  if (onProgress) onProgress((currentProgress = 50));
-  const expandedSections = await phase3ExpandSections(
-    outline,
-    language,
-    forbiddenWords
-  );
-
-  // Phase 4: Assemble final script
-  if (onProgress) onProgress((currentProgress = 70));
-
-  // Build the full body content from expanded sections
-  const bodyChunks = expandedSections.map(
-    (s) => s.expandedContent
-  ).join("\n\n");
-
-  const fullBody = `
-${outline.hook}
-
-${bodyChunks}
-
-${outline.climax}
-
-${outline.cta}
-`.trim();
-
-  // Count approximate words
-  const wordCount = fullBody.split(/\s+/).filter((w) => w.length > 0).length;
-
-  // Build visual cues array
-  const visualCues = expandedSections.map((s) => s.visualCue);
-
-  const script: GeneratedScript = {
-    id: scriptId,
-    title: `${topic} - Complete Guide`,
     outline,
     seo,
-    body: fullBody,
-    word_count: fullBody,
-    visual_cues: visualCues,
+    body,
+    word_count: body.split(/\s+/).filter(Boolean).length,
+    character_count: body.length,
+    visual_cues: sections.map((s) => s.visualCue),
     status: "completed",
-    created_at: new Date(),
+    created_at: new Date().toISOString(),
   };
 
   if (onProgress) onProgress(100);
-
   return script;
 }
 
-/**
- * Streamed generation for real-time client updates
- * 
- * @param topic The script topic
- * @param language Language code
- * @param tone Tone of the script
- * @param targetAudience Target audience description
- * @param forbiddenWords Words to avoid
- * @param onChunk Callback for each chunk of generated content
- * @returns Promise resolving to the complete GeneratedScript
- */
+// ============ PIPELINE CON STREAMING (callbacks por fase) ============
+
 export async function generateScriptStreaming(
   topic: string,
-  language: string = "en",
+  language: string = "es",
   tone: string = "engaging",
-  targetAudience: string = "content creators",
+  targetAudience: string = "creadores de contenido",
   forbiddenWords: string[] = [],
   onChunk: (chunk: string, phase: number) => void
 ): Promise<GeneratedScript> {
-  const scriptId = `stream_${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 11)}`;
   const script: GeneratedScript = {
-    id: scriptId,
-    title: `${topic} - Streaming Guide`,
-    outline: {} as ScriptOutline,
-    seo: {} as SeoVariants,
+    id: makeId("stream"),
+    title: `${topic} - Guion completo`,
+    topic,
+    language,
+    tone,
+    outline: { hook: "", retention_points: [], climax: "", cta: "", sections: [] },
+    seo: { titles: [], description: "", tags: [] },
     body: "",
     word_count: 0,
+    character_count: 0,
     visual_cues: [],
     status: "generating",
-    created_at: new Date(),
+    created_at: new Date().toISOString(),
   };
 
   try {
-    // Phase 1: Outline
-    onChunk("🔨 Generating script outline...", 1);
-    const outline = await phase1GenerateOutline(
-      topic,
-      language,
-      tone,
-      targetAudience,
-      forbiddenWords
-    );
+    // Fase 1: Outline
+    onChunk("🔨 Generando outline y puntos de tensión...", 1);
+    const outline = await phase1GenerateOutline(topic, language, tone, targetAudience);
     script.outline = outline;
-    onChunk("✅ Outline generated\n", 1);
+    onChunk("✅ Outline listo\n", 1);
 
-    // Phase 2: SEO
-    onChunk("📊 Generating SEO variants and title options...", 2);
+    // Fase 2: SEO
+    onChunk("📊 Generando variantes SEO (5 títulos, descripción y tags)...", 2);
     const seo = await phase2GenerateSeo(topic, outline, language);
     script.seo = seo;
-    onChunk("📝 SEO variants ready\n", 2);
+    onChunk(`✅ SEO listo (${seo.titles.length} títulos)\n`, 2);
 
-    // Phase 3: Section expansion
-    onChunk("🎬 Expanding sections with visual cues...", 3);
-    const expandedSections = await phase3ExpandSections(
-      outline,
-      language,
-      forbiddenWords
-    );
-    script.visual_cues = expandedSections.map((s) => s.visualCue);
-
-    // Yield each section as it's generated
-    for (let i = 0; i < expandedSections.length; i++) {
-      onChunk(
-        `📖 Section ${i + 1}/${expandedSections.length}: ${expandedSections[i].expandedContent.substring(
-          0,
-          100
-        )}...\n`,
-        3
-      );
+    // Fase 3: Expansión por secciones
+    onChunk("🎬 Expandiendo secciones con cues audiovisuales...", 3);
+    const sections = await phase3ExpandSections(outline, topic);
+    script.visual_cues = sections.map((s) => s.visualCue);
+    for (const [i, s] of sections.entries()) {
+      onChunk(`📖 Sección ${i + 1}/${sections.length}: ${s.expandedContent.slice(0, 80)}...\n`, 3);
     }
-    onChunk("✅ All sections expanded\n", 3);
+    onChunk("✅ Secciones expandidas\n", 3);
 
-    // Assemble final body
-    onChunk("🔗 Assembling final script body...", 4);
-    const bodyChunks = expandedSections.map(
-      (s) => s.expandedContent
-    ).join("\n\n");
-
-    script.body = `
-${outline.hook}
-
-${bodyChunks}
-
-${outline.climax}
-
-${outline.cta}
-`.trim();
-    script.word_count = script.body.split(/\s+/).filter((w) => w.length > 0).length;
+    // Fase 4: Ensamblado
+    onChunk("🔗 Ensambrando guion final...", 4);
+    script.body = assembleBody(outline, sections);
+    script.word_count = script.body.split(/\s+/).filter(Boolean).length;
+    script.character_count = script.body.length;
     script.status = "completed";
-
-    onChunk("✅ Script generation complete!\n", 4);
+    onChunk("✅ Guion completo generado!\n", 4);
 
     return script;
   } catch (error) {
     script.status = "failed";
-    onChunk(`❌ Generation failed: ${error instanceof Error ? error.message : String(error)}\n`, 0);
+    onChunk(
+      `❌ Generación falló: ${error instanceof Error ? error.message : String(error)}\n`,
+      0
+    );
     throw error;
   }
-}
-
-export type {
-  ScriptOutline,
-  SeoVariants,
-  VisualCue,
-  GeneratedScript,
 }

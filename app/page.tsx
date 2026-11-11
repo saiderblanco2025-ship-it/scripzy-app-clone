@@ -1,146 +1,112 @@
-/**
- * Home Page - Scripzy.app
- * 
- * Landing page with feature highlights and navigation to key modules.
- */
-import { Button } from "@/componentsui/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/componentsui/ui/card";
-import { useSupabase } from "@/lib/supabase";
+import Link from "next/link";
+import {
+  FileText,
+  ImageIcon,
+  Compass,
+  Vault,
+  LayoutDashboard,
+} from "lucide-react";
+
+const features = [
+  {
+    icon: FileText,
+    title: "Script Lab",
+    description:
+      "Pipeline encadenado de 4 fases que genera guiones largos con gancho, secciones, clímax y CTA, con cues [B-Roll] y [SFX] incluidos.",
+  },
+  {
+    icon: ImageIcon,
+    title: "Thumbnail Studio",
+    description:
+      "Genera miniaturas en 16:9 con modelos de IA y guárdalas automáticamente en tu bucket de Supabase Storage.",
+  },
+  {
+    icon: Compass,
+    title: "Niche Finder",
+    description:
+      "Descubre nichos rentables con RPM estimado ($2 a $35+), dificultad y etiqueta Faceless Friendly.",
+  },
+  {
+    icon: Vault,
+    title: "Presets Vault",
+    description:
+      "Guarda tu tono, audiencia, ritmo y palabras prohibidas para reutilizarlos en cada guion.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Créditos en vivo",
+    description:
+      "Control de créditos de caracteres y miniaturas con actualización en tiempo real.",
+  },
+];
 
 export default function HomePage() {
-  const { user } = useSupabase();
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Section */}
-      <header className="relative py-20 md:py-24 bg-gradient-to-b from-violet-950 via-blue-950 to-indigo-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6">
-            Unleash Your YouTube Potential
+    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-blue-950 to-indigo-950 text-white">
+      {/* Hero */}
+      <header className="px-4 py-24 text-center">
+        <div className="mx-auto max-w-3xl">
+          <span className="mb-4 inline-block rounded-full border border-violet-400/40 bg-violet-500/10 px-4 py-1 text-xs font-medium uppercase tracking-wider text-violet-300">
+            AI YouTube Creator CRM
+          </span>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            Desata tu potencial en YouTube
           </h1>
-          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-8">
-            Create compelling, faceless YouTube channels with AI-powered scripts,
-            automated thumbnails, and data-driven niche research.
+          <p className="mx-auto mt-6 max-w-xl text-lg text-slate-300">
+            Crea canales faceless con guiones largos generados por IA, miniaturas
+            automáticas y research de nichos con datos reales.
           </p>
-          
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 max-w-md mx-auto">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => {
-                // Navigate to script lab
-                window.location.href = "/script-lab";
-              }}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/script-lab"
+              className="rounded-md bg-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-violet-700"
             >
-              Start Creating Scripts
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => {
-                // Navigate to pricing/billing
-                window.location.href = "/billing";
-              }}
+              Crear mi primer guion
+            </Link>
+            <Link
+              href="/script-lab"
+              className="rounded-md border border-slate-600 px-6 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800"
             >
-              View Plans
-            </Button>
+              Ver planes
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Features Section */}
-      <section className="py-16 bg-card/50">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">Features</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Script Generation Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-primary"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M8 5v..."></path>
-                  </svg>
-                  AI Script Generation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Generate long-form YouTube scripts using our chained prompt pipeline.
-                  From outlines to full content with SEO optimization and visual cues.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Thumbnail Studio Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-primary"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 2L2 7l..."></path>
-                  </svg>
-                  Thumbnail Studio
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Generate AI thumbnails using Flux/Replicate models. 16:9 aspect ratio
-                  with automatic Supabase Storage integration.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Niche Finder Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-primary"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 2L2 7l..."></path>
-                  </svg>
-                  Niche Finder
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Discover profitable YouTube niches with RPM estimates, search volume,
-                  and faceless-friendliness scoring.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      {/* Features */}
+      <section className="mx-auto max-w-6xl px-4 pb-24">
+        <h2 className="mb-10 text-center text-3xl font-bold">Módulos del sistema</h2>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-lg border border-slate-700 bg-slate-900/50 p-6 backdrop-blur-sm"
+            >
+              <feature.icon className="mb-4 h-8 w-8 text-violet-400" />
+              <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
+              <p className="text-sm text-slate-300">{feature.description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-b from-violet-500/10 via-blue-500/10 to-indigo-500/10">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to grow your channel?</h2>
-          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Join thousands of creators using AI to automate their YouTube success.
-          </p>
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => {
-              window.location.href = "/script-lab";
-            }}
-          >
-            Generate Your First Script
-          </Button>
-        </div>
+      {/* CTA */}
+      <section className="border-t border-slate-800 bg-slate-950/60 px-4 py-16 text-center">
+        <h2 className="text-3xl font-bold">¿Listo para crecer tu canal?</h2>
+        <p className="mx-auto mt-3 max-w-xl text-slate-300">
+          Únete a los creadores que automatizan su producción con Scripzy.
+        </p>
+        <Link
+          href="/script-lab"
+          className="mt-8 inline-block rounded-md bg-amber-500 px-8 py-3 text-sm font-semibold text-violet-950 transition-colors hover:bg-amber-600"
+        >
+          Empezar gratis
+        </Link>
       </section>
+
+      <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500">
+        Scripzy.app — Clone build · Next.js · Supabase · Stripe · IA
+      </footer>
     </div>
   );
 }

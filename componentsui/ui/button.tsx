@@ -1,55 +1,46 @@
 "use client";
 
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg" | "icon";
-  hasLoader?: boolean;
+const variants = {
+  default:
+    "bg-violet-600 text-white hover:bg-violet-700 shadow-sm",
+  secondary:
+    "bg-amber-500 text-violet-950 hover:bg-amber-600 shadow-sm",
+  destructive:
+    "bg-red-600 text-white hover:bg-red-700 shadow-sm",
+  outline:
+    "border border-slate-600 bg-transparent text-slate-100 hover:bg-slate-800",
+  ghost: "text-slate-100 hover:bg-slate-800",
+};
+
+const sizes = {
+  default: "h-10 px-4 py-2",
+  sm: "h-8 px-3 text-xs",
+  lg: "h-12 px-6 text-base",
+  icon: "h-10 w-10",
+};
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: keyof typeof variants;
+  size?: keyof typeof sizes;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "default", hasLoader = false, ...props }, ref ) => {
-    const [mount, setMount] = React.useState(false);
-
-    React.useEffect(() => {
-      setMount(true);
-    }, []);
-
-    return (
-      <Slot rootRef={ref} wrapperRef={ref} mount={mount} className={className}>
-        <button
-          className=`relative inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${cn(
-            "inline-flex items-center justify-center rounded-md border border-transparent bg-primary-foreground text-primary-600 hover:bg-primary-600/90 ",
-            variant === "default"
-              ? "hover:bg-primary-600/90"
-              : variant === "secondary"
-                ? "border border-input bg-background hover:bg-accent/80"
-                : variant === "destructive"
-                  ? "hover:bg-red-600/90"
-                  : variant === "outline"
-                    ? "border border-input bg-transparent hover:bg-accent/80"
-                    : variant === "ghost"
-                      ? "hover:bg-accent/80"
-                      : ""
-          )} ${cn(
-            "disabled:opacity-50 disabled:pointer-events-none",
-            `h-${size === "icon" ? 10 : size === "sm" ? 8 : size === "lg" ? 12 : 10} w-${size === "icon" ? 10 : size === "sm" ? 8 : size === "lg" ? 12 : 10} ${size === "icon" ? "flex items-center justify-center" : ""}`
-          )}`
-          type={props.type}
-          disabled={props.disabled}
-          {...props}
-        >
-          {hasLoader ? (
-            <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-current border-t-0 mr-2"></span>
-          ) : null}
-          {children}
-        </button>
-      </Slot>
-    );
-  }
+  ({ className, variant = "default", size = "default", ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:pointer-events-none disabled:opacity-50",
+        variants[variant],
+        sizes[size],
+        className
+      )}
+      {...props}
+    />
+  )
 );
 
 Button.displayName = "Button";

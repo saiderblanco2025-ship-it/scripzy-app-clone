@@ -1,568 +1,318 @@
-/**
- * Script Lab - YouTube Script Generation Interface
- * 
- * Main component for the Scripzy.app Script Lab where creators can:
- * - Generate long-form YouTube scripts using the chained prompt pipeline
- * - Select presets and customize generation parameters
- * - View real-time progress of script generation
- * - Preview and export completed scripts
- */
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { 
-  generateScriptStreaming, 
-  type GeneratedScript,
-  type ScriptOutline,
-  type SeoVariants
-} from "@/lib/script-engine";
-import { 
-  Button, 
-  Input, 
-  Select, 
-  SelectTrigger, 
-  SelectContent, 
-  SelectItem, 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent, 
-  Alert, 
-  AlertTitle, 
-  ProgressRing, 
-  Loader2,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  Form,
-  FormControl,
-  FormLabel,
-  FormDescription,
-  FormField,
-  useFormStatus,
-} from "@/components/ui";
-import { 
-  lucideMenu, 
-  lucideFileText, 
-  lucideZap, 
-  lucideLoader,
-  lucideAlertCircle,
-  lucideArrowDown,
-  lucideRefreshCcw,
-} from "lucide-react";
-import { useSupabase } from "@/lib/supabase";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Loader2, Sparkles, FileText, Tags, Clock, AlertCircle } from "lucide-react";
+import { Button } from "@/componentsui/ui/button";
+import { Input } from "@/componentsui/ui/input";
+import { Select, SelectOption } from "@/componentsui/ui/select";
+import { Alert, AlertTitle, AlertDescription } from "@/componentsui/ui/alert";
+import type { GeneratedScript } from "@/lib/script-engine";
 
-/**
- * ScriptLab Component
- * Main interface for script generation with real-time streaming updates
- */
-export default function ScriptLab() {
-  // State management
+export default function ScriptLabPage() {
+  // Parámetros del formulario
   const [topic, setTopic] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState("es");
   const [tone, setTone] = useState("engaging");
-  const [targetAudience, setTargetAudience] = useState("content creators");
-  const [forbiddenWords, setForbiddenWords] = useState<string[]>([]);
-  const [presetId, setPresetId] = useState<string | undefined>(undefined);
-  
-  // Generation state
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [targetAudience, setTargetAudience] = useState("creadores de contenido");
+  const [forbiddenWords, setForbiddenWords] = useState("");
+
+  // Estado de generación
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [script, setScript] = useState<GeneratedScript | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  
-  // SEO state
-  const [seoTitles, setSeoTitles] = useState<string[]>([]);
-  const [seoDescription, setSeoDescription] = useState("");
-  const [seoTags, setSeoTags] = useState<string[]>([]);
-  
-  // Supabase integration
-  const { supabase, user } = useSupabase();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // Fetch presets from Supabase if user is authenticated
-  useEffect(() => {
-    // Presets would be loaded here from Supabase
-  }, [user]);
+  async function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!topic.trim() || loading) return;
 
-  // Handle script generation with streaming
-  const handleGenerate = useCallback(async (
-    topic: string,
-    language: string,
-    tone: string,
-    targetAudience: string,
-    forbiddenWords: string[]
-  ) => {
-    if (!topic.trim()) {
-      alert("Please enter a topic for your script");
-      return;
-    }
-
-    setIsGenerating(true);
-    setProgress(0);
+    setLoading(true);
+    setError(null);
     setScript(null);
-    setSeoTitles([]);
-    setSeoDescription("");
-    setSeoTags([]);
 
     try {
-      // Call the streaming generation pipeline
-      const result = await generateScriptStreaming(
-        topic,
-        language,
-        tone,
-        targetAudience,
-        forbiddenWords,
-        (chunk: string, phase: number) => {
-          // Update progress based on chunk and phase
-          const phaseProgress = phase * 25; // 4 phases = 100%
-          setProgress(Math.min(100, phaseProgress + 15));
-          console.log(`[Phase ${phase}] ${chunk.trim()}`);
-        }
-      );
+      const res = await fetch("/api/generate-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: topic.trim(),
+          language,
+          tone,
+          targetAudience,
+          forbiddenWords: forbiddenWords
+            .split(",")
+            .map((w) => w.trim())
+            .filter(Boolean),
+        }),
+      });
 
-      setScript(result);
-      setProgress(100);
-      setSeoTitles(result.seo?.titles || []);
-      setSeoDescription(result.seo?.description || "");
-      setSeoTags(result.seo?.tags || []);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Error generando el guion");
+      }
 
-      // TODO: Save script to Supabase
-      // await supabase.from("scripts").insert({ ...result, user_id: user?.id });
-
-    } catch (error) {
-      console.error("Generation failed:", error);
-      alert(
-        "Failed to generate script. Please try again or check the console for details."
-      );
+      setScript(data.script as GeneratedScript);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
-  }, []);
-
-  // Handle SEO variants change
-  const handleSeoSelect = useCallback((title: string) => {
-    // User selected a title variant - could pre-fill the script title
-    console.log("Selected SEO title:", title);
-  }, []);
-
-  // Format progress as percentage string
-  const progressText = `${progress}% complete`;
-
-  // Format word count
-  const wordCount = script?.word_count > 0 
-    ? `${script.word_count.toLocaleString()} words` 
-    : "0 words";
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tighter">
-            Script Lab
+      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <h1 className="text-xl font-bold">
+            ⚡ Script Lab
           </h1>
-          <Button 
-            variant="outline" 
-            onClick={() => router.refresh()}
-            className="hidden sm:block"
+          <a
+            href="/"
+            className="text-sm text-slate-400 transition-colors hover:text-slate-200"
           >
-            ↻ Refresh
-          </Button>
+            ← Volver al inicio
+          </a>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-4">
-        
-        {/* Generation Form */}
-        <div className="mb-6 rounded-lg border-border/50 bg-card/80 p-5">
-          <h2 className="font-semibold mb-4 flex items-center gap-2">
-            <lucideMenu className="h-5 w-5" /> Generate YouTube Script
-          </h2>
-          
-          <Form onSubmit={(e) => {
-            e.preventDefault();
-            handleGenerate(topic, language, tone, targetAudience, forbiddenWords);
-          }}>
-            
-            {/* Topic Input */}
-            <FormField>
-              <FormLabel>Video Topic</FormLabel>
-              <FormControl>
-                <Input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Enter your video topic or title"
-                  disabled={isGenerating}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter the topic or title of your YouTube video. This will be the basis for the script generation.
-              </FormDescription>
-            </FormField>
+      <main className="mx-auto max-w-7xl px-4 py-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+          {/* Formulario */}
+          <section className="lg:col-span-2">
+            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+              <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold">
+                <Sparkles className="h-5 w-5 text-violet-400" />
+                Parámetros del guion
+              </h2>
 
-            {/* Language Selector */}
-            <FormField className="grid grid-cols-2 gap-4">
-              <FormField>
-                <FormLabel>Language</FormLabel>
-                <FormControl>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
-                      <SelectItem value="pt">Portuguese</SelectItem>
-                      <SelectItem value="hi">Hindi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormField>
+              <form onSubmit={handleGenerate} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm text-slate-300">
+                    Tema del video
+                  </label>
+                  <Input
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="Ej: Cómo los piratas modernos ganan millones"
+                    disabled={loading}
+                  />
+                </div>
 
-              <FormField>
-                <FormLabel>Tone</FormLabel>
-                <FormControl>
-                  <Select value={tone} onValueChange={setTone}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="engaging">Engaging</SelectItem>
-                      <SelectItem value="educational">Educational</SelectItem>
-                      <SelectItem value="persuasive">Persuasive</SelectItem>
-                      <SelectItem value="entertaining">Entertaining</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormField>
-            </FormField>
-
-            {/* Target Audience */}
-            <FormField>
-              <FormLabel>Target Audience</FormLabel>
-              <FormControl>
-                <Input
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  placeholder="e.g., beginner programmers, small business owners"
-                  disabled={isGenerating}
-                />
-              </FormControl>
-              <FormDescription>
-                Describe your target audience to tailor the script's approach and complexity.
-              </FormDescription>
-            </FormField>
-
-            {/* Forbidden Words */}
-            <FormField>
-              <FormLabel>Forbidden Words (comma-separated)</FormLabel>
-              <FormControl>
-                <Input
-                  value={forbiddenWords.join(", ")}
-                  onChange={(e) => {
-                    const words = e.target.value
-                      .split(",")
-                      .map((w: string) => w.trim())
-                      .filter((w: string) => w.length > 0);
-                    setForbiddenWords(words);
-                  }}
-                  placeholder="taboo, banned, prohibited"
-                  disabled={isGenerating}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter words or phrases to avoid in the generated script (comma-separated).
-              </FormDescription>
-            </FormField>
-
-            {/* Preset Selector */}
-            <FormField>
-              <FormLabel>Saved Preset</FormLabel>
-              <FormControl disabled={isGenerating}>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a preset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Presets would be loaded from Supabase */}
-                    <SelectItem value="">None</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormField>
-
-            {/* Generate Button */}
-            <div className="mt-6 flex gap-3">
-              <Button
-                type="submit"
-                disabled={isGenerating || !topic.trim()}
-                className="flex-1"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 me-2" />
-                    Generating...
-                  </>
-                ) : (
-                  "Generate Script"
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  // Reset form
-                  setTopic("");
-                  setLanguage("en");
-                  setTone("engaging");
-                  setTargetAudience("content creators");
-                  setForbiddenWords([]);
-                  setProgress(0);
-                  setScript(null);
-                  setSeoTitles([]);
-                  setSeoDescription("");
-                  setSeoTags([]);
-                }}
-                disabled={isGenerating}
-              >
-                Reset
-              </Button>
-            </div>
-          </Form>
-        </div>
-
-        {/* Progress Indicator */}
-        {isGenerating && progress > 0 && (
-          <div className="mb-4">
-            <ProgressRing size={24} className="mr-2" />
-            <span className="text-sm text-muted-foreground">
-              {progressText}
-            </span>
-          </div>
-        )}
-
-        {/* Generated Script Preview */}
-        {script && !isGenerating && (
-          <div className="mt-8 rounded-lg border border-border/50 bg-card/80 p-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {script.title}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="ml-auto flex items-center"
-                  >
-                    {showPreview ? "✕" : "⚙️"}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              
-              {/* SEO Section */}
-              {script.seo && (
-                <CardContent className="space-y-4">
-                  <h3 className="font-medium mb-3 text-sm text-muted-foreground">SEO Variants</h3>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    {script.seo.titles.map((title, index) => (
-                      <div
-                        key={index}
-                        className {
-                          "border rounded-lg p-3 flex items-center gap-2 " +
-                          (index === 0 ? "border-primary/30 bg-primary/5" : "text-sm")
-                        }
-                      >
-                        <span className="flex-1 truncate">{title}</span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">{script.seo.description}</p>
-                  
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-xs text-muted-foreground">Tags: </span>
-                    {script.seo.tags.slice(0, 8).map((tag, i) => (
-                      <span key={i} className="mx-1 text-capitalize text-xs italic">
+                    <label className="mb-1 block text-sm text-slate-300">Idioma</label>
+                    <Select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      disabled={loading}
+                    >
+                      <SelectOption value="es">Español</SelectOption>
+                      <SelectOption value="en">English</SelectOption>
+                      <SelectOption value="fr">Français</SelectOption>
+                      <SelectOption value="de">Deutsch</SelectOption>
+                      <SelectOption value="pt">Português</SelectOption>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm text-slate-300">Tono</label>
+                    <Select
+                      value={tone}
+                      onChange={(e) => setTone(e.target.value)}
+                      disabled={loading}
+                    >
+                      <SelectOption value="engaging">Engaging</SelectOption>
+                      <SelectOption value="educational">Educational</SelectOption>
+                      <SelectOption value="persuasive">Persuasive</SelectOption>
+                      <SelectOption value="entertaining">Entertaining</SelectOption>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm text-slate-300">
+                    Audiencia objetivo
+                  </label>
+                  <Input
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    placeholder="Ej: emprendedores, gamers, estudiantes"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm text-slate-300">
+                    Palabras prohibidas (separadas por coma)
+                  </label>
+                  <Input
+                    value={forbiddenWords}
+                    onChange={(e) => setForbiddenWords(e.target.value)}
+                    placeholder="palabra1, palabra2"
+                    disabled={loading}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading || !topic.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generando guion...
+                    </>
+                  ) : (
+                    "Generar guion"
+                  )}
+                </Button>
+              </form>
+
+              {error && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Error
+                  </AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </section>
+
+          {/* Resultado */}
+          <section className="lg:col-span-3">
+            {!script && !loading && (
+              <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-10 text-center">
+                <div>
+                  <FileText className="mx-auto mb-4 h-12 w-12 text-slate-600" />
+                  <p className="text-slate-400">
+                    Tu guion generado aparecerá aquí.
+                    <br />
+                    Configura los parámetros y presiona{" "}
+                    <span className="text-violet-400">Generar guion</span>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {loading && (
+              <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900/40">
+                <div className="text-center">
+                  <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-violet-500" />
+                  <p className="text-slate-400">
+                    Ejecutando pipeline de 4 fases...
+                    <br />
+                    <span className="text-xs">
+                      Outline → SEO → Secciones con cues → Ensamblado
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {script && !loading && (
+              <div className="space-y-6">
+                {/* Título y métricas */}
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+                  <h2 className="text-xl font-bold text-white">{script.title}</h2>
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+                    <span className="rounded bg-slate-800 px-2 py-1">
+                      {script.word_count.toLocaleString()} palabras
+                    </span>
+                    <span className="rounded bg-slate-800 px-2 py-1">
+                      {script.character_count.toLocaleString()} caracteres
+                    </span>
+                    <span className="rounded bg-slate-800 px-2 py-1">
+                      Estado: {script.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* SEO */}
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold">
+                    <Tags className="h-4 w-4 text-amber-400" />
+                    Variantes SEO (Curiosity Gap)
+                  </h3>
+                  <ul className="mb-4 space-y-2">
+                    {script.seo.titles.map((t, i) => (
+                      <li
+                        key={i}
+                        className="rounded border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm"
+                      >
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mb-3 text-sm text-slate-300">
+                    {script.seo.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {script.seo.tags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="rounded-full bg-violet-500/10 px-3 py-1 text-xs text-violet-300"
+                      >
                         #{tag}
                       </span>
                     ))}
                   </div>
-                </CardContent>
-              )}
+                </div>
 
-              {/* Script Body Preview */}
-              <CardContent className="pt-4">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {script.body.substring(0, 300)}...
-                </p>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowPreview(true)}
-                  className="mt-2 text-primary hover:text-primary-foreground"
-                >
-                  View Full Script
-                </Button>
-              </CardContent>
-              
-              {/* Visual Cues Summary */}
-              {script.visual_cues && script.visual_cues.length > 0 && (
-                <CardContent className="pt-4">
-                  <h3 className="font-medium mb-3 text-sm text-muted-foreground">
-                    Visual Cues ({script.visual_cues.length})
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    {script.visual_cues.slice(0, 3).map((cue, i) => (
-                      <div key={i} className="p-2 rounded bg-primary/5 text-primary">
-                        <span className="font-medium">{cue.timestamp}</span>: {cue.description}
+                {/* Outline */}
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+                  <h3 className="mb-3 font-semibold">Estructura (Outline)</h3>
+                  <p className="mb-2 text-sm text-violet-300">
+                    <strong>Gancho:</strong> {script.outline.hook}
+                  </p>
+                  <div className="space-y-2">
+                    {script.outline.sections.map((s, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 rounded border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm"
+                      >
+                        <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+                        <span className="text-slate-500">{s.duration_estimate}</span>
+                        <span className="font-medium">{s.title}</span>
                       </div>
                     ))}
-                    {script.visual_cues.length > 3 && (
-                      <div className="text-primary/50 text-xs">
-                        +{script.visual_cues.length - 3} more
-                      </div>
-                    )}
                   </div>
-                </CardContent>
-              )}
-
-              {/* Action Buttons */}
-              <CardContent className="pt-4 flex gap-3">
-                <Button
-                  onClick={() => {
-                    // TODO: Export script
-                    console.log("Export script:", script.id);
-                  }}
-                  className="flex-1"
-                >
-                  <lucideFileText className="h-4 w-4 mr-2" /> Export
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // TODO: Save to presets
-                    console.log("Save to presets");
-                  }}
-                >
-                  <lucideZap className="h-4 w-4 mr-2" /> Save Preset
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Empty state or preview dialog */}
-        {showPreview && script && (
-          <Dialog open={true} onOpenChange={(open) => setShowPreview(!open)}>
-            <DialogTrigger asChild>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{script.title}</DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  {/* Outline */}
-                  <div>
-                    <h4 className="font-medium">Script Outline</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-sm">
-                      <li>
-                        <strong>Hook:</strong> {script.outline?.hook}
-                      </li>
-                      <li>
-                        <strong>Retention Points:</strong> 
-                        {script.outline?.retention_points?.map((p: string) => `• ${p}`).join("\n")}
-                      </li>
-                      <li>
-                        <strong>Climax:</strong> {script.outline?.climax}
-                      </li>
-                      <li>
-                        <strong>CTA:</strong> {script.outline?.cta}
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* SEO Section in Dialog */}
-                  {script.seo && (
-                    <div>
-                      <h4 className="font-medium">SEO Variants</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {script.seo.titles.map((title, i) => (
-                          <div key={i} className="p-2 rounded bg-muted">
-                            <strong>Title {i + 1}:</strong> {title}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs mt-2">{script.seo.description}</p>
-                    </div>
-                  )}
-
-                  {/* Full Script Body */}
-                  <div>
-                    <h4 className="font-medium">Full Script</h4>
-                    <pre 
-                      className="bg-muted/50 p-4 rounded overflow-x-auto text-xs"
-                    >
-                      {script.body}
-                    </pre>
-                  </div>
-
-                  {/* Visual Cues */}
-                  {script.visual_cues && script.visual_cues.length > 0 && (
-                    <div>
-                      <h4 className="font-medium">Visual Cues</h4>
-                      <ul className="list-disc pl-5 space-y-1 text-sm">
-                        {script.visual_cues.map((cue, i) => (
-                          <li key={i}>
-                            <span className="font-medium">{cue.timestamp}</span>: 
-                            {cue.b_roll} | {cue.sfx}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
-                
-                <div className="flex justify-end gap-3 pt-6">
-                  <Button
-                    onClick={() => setShowPreview(false)}
-                    className="flex-1"
-                  >
-                    Close
-                  </Button>
+
+                {/* Guion completo */}
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+                  <h3 className="mb-3 font-semibold">Guion completo</h3>
+                  <pre className="max-h-[500px] overflow-y-auto whitespace-pre-wrap rounded bg-slate-950 p-4 text-xs leading-relaxed text-slate-300">
+                    {script.body}
+                  </pre>
                 </div>
-              </DialogContent>
-            </DialogTrigger>
-          </Dialog>
-        )}
+
+                {/* Cues audiovisuales */}
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+                  <h3 className="mb-3 font-semibold">
+                    Cues audiovisuales ({script.visual_cues.length})
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    {script.visual_cues.map((cue, i) => (
+                      <div
+                        key={i}
+                        className="rounded border border-slate-700 bg-slate-800/60 px-3 py-2"
+                      >
+                        <span className="mr-2 font-mono text-xs text-amber-400">
+                          {cue.timestamp}
+                        </span>
+                        <span className="text-slate-300">{cue.b_roll}</span>
+                        <span className="block text-xs text-slate-500">{cue.sfx}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );
-}
-
-/**
- * Helper component for script generation status display
- */
-function useScriptGenerationStatus(
-  isGenerating: boolean,
-  progress: number
-) {
-  const status = isGenerating ? `${progress}% generating` : "Ready";
-  return status;
 }
