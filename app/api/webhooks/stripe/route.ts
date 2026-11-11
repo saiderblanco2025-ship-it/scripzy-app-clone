@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-// Inicializar Stripe con la clave secreta del entorno
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * Cliente Stripe LAZY (perezoso):
+ * Solo se instancia cuando llega un webhook real.
+ * Evita que el build falle cuando STRIPE_SECRET_KEY no está configurada.
+ */
+let stripeClient: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error(
+        "STRIPE_SECRET_KEY no está configurada en las variables de entorno"
+      );
+    }
+    stripeClient = new Stripe(key);
+  }
+  return stripeClient;
+}
 
 // Handlers de eventos de Stripe
 const eventHandlers: Record<string, (event: Stripe.Event) => Promise<void>> = {
@@ -52,17 +69,18 @@ const eventHandlers: Record<string, (event: Stripe.Event) => Promise<void>> = {
  */
 export async function POST(request: Request) {
   const sig = request.headers.get("stripe-signature") || "";
+
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       await request.text(),
       sig,
       process.env.STRIPE_WEBHOOK_SECRET || ""
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`⚠️ Verificación de firma falló: ${message}`);
+    console.error(`⚠️ Webhook rechazado: ${message}`);
     return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
   }
 
@@ -82,11 +100,12 @@ export async function POST(request: Request) {
 }
 
 /**
- * GET - Info del endpoint
+ * GET - Health check del endpoint
  */
 export async function GET() {
   return NextResponse.json({
     status: "webhook-endpoint-active",
+    stripe_configured: Boolean(process.env.STRIPE_SECRET_KEY),
     supported_events: Object.keys(eventHandlers),
     version: "0.1.0",
   });
