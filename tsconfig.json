@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "./app",
+    "jsx": "react-jsx",
+    "plugins": [
+      {
+        "name": "nexttypescript"
+      }
+    ]
+  },
+  "include": ["app", "components", "src"],
+  "exclude": ["node_modules", ".next"]
+}

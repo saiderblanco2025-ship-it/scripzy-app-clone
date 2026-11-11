@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom properties for the violet/amber/blue palette */
+:root {
+  --background: #0a0a0f;
+  --foreground: #fafafa;
+  --card: #16161f;
+  --card-foreground: #fafafa;
+  --popover: #16161f;
+  --popover-foreground: #fafafa;
+  --primary: #8b8bd9;
+  --primary-foreground: #fafafa;
+  --secondary: #f59e0b;
+  --secondary-foreground: #1e1e37;
+  --muted: #737392;
+  --muted-foreground: #a3a3bd;
+  --accent: #ec4899;
+  --border: #3f3f5f;
+  --input: #3f3f5f;
+  --ring: #8b8bd9;
+}
