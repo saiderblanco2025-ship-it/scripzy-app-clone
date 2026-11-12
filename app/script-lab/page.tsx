@@ -380,10 +380,11 @@ export default function ScriptLabPage() {
                 <div className="text-center">
                   <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-violet-500" />
                   <p className="text-slate-400">
-                    Ejecutando pipeline de 4 fases...
+                    🧠 La IA está escribiendo tu guion completo...
                     <br />
                     <span className="text-xs">
-                      Outline → SEO → Secciones con cues → Ensamblado
+                      Gancho → Estructura → Guion largo → SEO. Puede tardar 1 a 3
+                      minutos, no cierres la página.
                     </span>
                   </p>
                 </div>
