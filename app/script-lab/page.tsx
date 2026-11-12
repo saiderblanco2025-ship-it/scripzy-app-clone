@@ -151,7 +151,11 @@ export default function ScriptLabPage() {
     const body = row.body_text ?? "";
 
     const restored: GeneratedScript = {
+      id: row.id,
       title: row.title,
+      topic: row.topic ?? "",
+      language: row.language ?? "es",
+      tone: row.tone ?? "engaging",
       outline: json.outline ?? {
         hook: row.hook_text ?? "",
         retention_points: [],
@@ -165,6 +169,7 @@ export default function ScriptLabPage() {
       character_count: row.actual_character_count ?? body.length,
       visual_cues: json.visual_cues ?? [],
       status: (row.status as GeneratedScript["status"]) ?? "completed",
+      created_at: row.created_at ?? new Date().toISOString(),
     };
 
     setScript(restored);
