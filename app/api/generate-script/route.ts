@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { generateScriptStreaming, type GeneratedScript } from "@/lib/script-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // El motor IA (n8n + GPT) puede tardar 1-3 minutos en escribir 1.500 palabras.
 export const maxDuration = 300;
+
+// Datos públicos de Supabase (mismos que lib/supabase.ts)
+const SUPABASE_URL = "https://mmrdwogxczcrkcyapbkx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EluJACXjQ_qIjAD-CIRShQ_ulHv7jJD";
 
 // Tipos para la petición
 interface GenerateScriptRequest {
@@ -29,6 +34,7 @@ async function generateWithN8nEngine(params: {
   tone: string;
   targetAudience: string;
   forbiddenWords: string[];
+  userId: string;
 }): Promise<GeneratedScript | null> {
   if (!N8N_ENGINE_URL) return null;
 
@@ -42,6 +48,7 @@ async function generateWithN8nEngine(params: {
         tone: params.tone,
         targetAudience: params.targetAudience,
         forbiddenWords: params.forbiddenWords,
+        userId: params.userId,
       }),
       signal: AbortSignal.timeout(280_000),
     });
@@ -89,6 +96,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar la sesión del usuario con su token (el cerebro de n8n es por usuario)
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: "Sesión inválida" }, { status: 401 });
+    }
+    const userId = userData.user.id;
+
     // Motor de IA real (n8n)
     const aiScript = await generateWithN8nEngine({
       topic,
@@ -96,6 +116,7 @@ export async function POST(request: Request) {
       tone,
       targetAudience,
       forbiddenWords,
+      userId,
     });
 
     if (aiScript) {

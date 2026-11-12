@@ -17,6 +17,7 @@ import { Select, SelectOption } from "@/componentsui/ui/select";
 import { Alert, AlertTitle, AlertDescription } from "@/componentsui/ui/alert";
 import type { GeneratedScript } from "@/lib/script-engine";
 import {
+  supabase,
   useUser,
   saveScript as saveScriptToDb,
   listMyScripts,
@@ -76,9 +77,15 @@ export default function ScriptLabPage() {
     setViewingHistory(false);
 
     try {
+      // Token de sesión para la API (verifica identidad y habilita el cerebro por usuario)
+      const { data: sessionData } = await supabase.auth.getSession();
+
       const res = await fetch("/api/generate-script", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session?.access_token ?? ""}`,
+        },
         body: JSON.stringify({
           topic: topic.trim(),
           language,
