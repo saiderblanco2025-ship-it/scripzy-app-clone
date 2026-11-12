@@ -74,7 +74,7 @@ export default function HomePage() {
               Crear mi primer guion
             </Link>
             <Link
-              href="/script-lab"
+              href="/pricing"
               className="rounded-md border border-slate-600 px-6 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800"
             >
               Ver planes
