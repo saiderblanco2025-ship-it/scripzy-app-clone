@@ -19,12 +19,12 @@ export type PlanConfig = {
   priceIdEnv?: "STRIPE_PRICE_STARTER" | "STRIPE_PRICE_PRO" | "STRIPE_PRICE_PREMIUM" | "STRIPE_PRICE_ULTRA";
 };
 
-/** IDs de precio de Stripe (rellenados tras crear los productos). */
+/** IDs de precio de Stripe (creados en modo prueba 2026-11-12). */
 export const PRICE_IDS: Record<Exclude<PlanTier, "free">, string | null> = {
-  starter: null,
-  pro: null,
-  premium: null,
-  ultra: null,
+  starter: "price_1UayzSFN2iTFJizI8910kt86",
+  pro: "price_1UayzSFN2iTFJizIPqwe8Vja",
+  premium: "price_1UayzTFN2iTFJizIG2mvg1kk",
+  ultra: "price_1UayzTFN2iTFJizIWDZ1W8D1",
 };
 
 export const PLANS: PlanConfig[] = [
