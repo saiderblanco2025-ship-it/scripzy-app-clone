@@ -173,7 +173,7 @@ const eventHandlers: Record<string, (event: Stripe.Event) => Promise<void>> = {
 
     const { data: existing } = await admin
       .from("subscriptions")
-      .select("id, user_id")
+      .select("id, user_id, plan_tier")
       .eq("stripe_subscription_id", subscription.id)
       .maybeSingle();
 

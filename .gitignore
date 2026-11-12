@@ -1,1 +1,20 @@
+# Dependencias
+node_modules/
+
+# Build de Next.js
+.next/
+out/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+
+# Variables de entorno reales (NUNCA subir claves verdaderas)
 .env.local
+.env*.local
+
+# Generado por Next
+next-env.d.ts
