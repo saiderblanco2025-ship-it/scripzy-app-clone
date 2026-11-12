@@ -158,13 +158,26 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ===== Hero ===== */}
-      <header className="relative px-4 pb-24 pt-20 text-center">
+      {/* ===== Hero con video de fondo ===== */}
+      <header className="relative overflow-hidden px-4 pb-24 pt-20 text-center">
+        {/* Video de fondo (estilo Scripzy original) */}
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src="/hero-bg.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+        {/* Capa oscura para que el texto se lea siempre */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/70 to-indigo-950/95" />
         <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[600px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-3xl" />
         <div className="relative mx-auto max-w-3xl">
           <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-500/10 px-4 py-1 text-xs font-medium uppercase tracking-wider text-violet-300">
             <Zap className="h-3 w-3" />
-            AI YouTube Creator CRM
+            Tu Guionista de YouTube 24/7 · AI Powered
           </span>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
             Guiones que retienen.{" "}
