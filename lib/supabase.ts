@@ -3,13 +3,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-// Fijados en código para que el despliegue nunca dependa de la configuración
-// de variables en Vercel (la URL y la publishable key son públicas por diseño).
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mmrdwogxczcrkcyapbkx.supabase.co";
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "sb_publishable_EluJACXjQ_qIjAD-CIRShQ_ulHv7jJD";
+// Fijados directamente en código: la URL y la publishable key son datos
+// públicos por diseño, y así el despliegue nunca depende de la configuración
+// de variables en Vercel.
+const supabaseUrl = "https://mmrdwogxczcrkcyapbkx.supabase.co";
+const supabaseAnonKey = "sb_publishable_EluJACXjQ_qIjAD-CIRShQ_ulHv7jJD";
 
 /**
  * Cliente Supabase del navegador.
