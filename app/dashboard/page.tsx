@@ -113,6 +113,9 @@ export default function DashboardPage() {
               <Link href="/script-lab" className="hover:text-white">
                 Script Lab
               </Link>
+              <Link href="/nichos" className="hover:text-white">
+                Nichos
+              </Link>
               <Link href="/pricing" className="hover:text-white">
                 Planes
               </Link>
