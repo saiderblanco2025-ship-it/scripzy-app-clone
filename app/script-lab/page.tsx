@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, FileText, Tags, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { Input } from "@/componentsui/ui/input";
 import { Select, SelectOption } from "@/componentsui/ui/select";
 import { Alert, AlertTitle, AlertDescription } from "@/componentsui/ui/alert";
 import type { GeneratedScript } from "@/lib/script-engine";
+import { useUser } from "@/lib/supabase";
+import { UserMenu } from "@/components/user-menu";
 
 export default function ScriptLabPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useUser();
+
+  // Redirigir al login si no hay sesión
+  useEffect(() => {
+    if (!authLoading && !user) router.replace("/login");
+  }, [authLoading, user, router]);
+
   // Parámetros del formulario
   const [topic, setTopic] = useState("");
   const [language, setLanguage] = useState("es");
@@ -58,6 +69,16 @@ export default function ScriptLabPage() {
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
@@ -66,12 +87,15 @@ export default function ScriptLabPage() {
           <h1 className="text-xl font-bold">
             ⚡ Script Lab
           </h1>
-          <a
-            href="/"
-            className="text-sm text-slate-400 transition-colors hover:text-slate-200"
-          >
-            ← Volver al inicio
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="/"
+              className="text-sm text-slate-400 transition-colors hover:text-slate-200"
+            >
+              ← Inicio
+            </a>
+            <UserMenu />
+          </div>
         </div>
       </header>
 

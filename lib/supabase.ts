@@ -1,13 +1,26 @@
+"use client";
+
 import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
-// Initialize Supabase client
-// In production, these would come from environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://your-project.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "your-anon-key";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Cliente Supabase del navegador.
+ * - persistSession: guarda la sesión en localStorage
+ * - detectSessionInUrl: procesa el hash/tokens al volver de Google
+ */
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
-// Types for common operations
+// ============ TIPOS ============
+
 export type Profile = {
   id: string;
   email: string;
@@ -48,261 +61,107 @@ export type Preset = {
   tone: "engaging" | "educational" | "persuasive" | "entertaining";
   audience_profile: string | null;
   pacing: "slow" | "medium" | "fast";
-  narrative_structure_rules: any;
+  narrative_structure_rules: Record<string, unknown>;
   forbidden_words: string[];
   created_at: string;
   updated_at: string;
 };
 
-export type NicheDatabase = {
-  id: string;
-  niche_name: string;
-  category: "gaming" | "education" | "tech" | "lifestyle" | "business" | "faceless";
-  estimated_rpm_min: number;
-  estimated_rpm_max: number;
-  difficulty_score: number;
-  is_faceless_friendly: boolean;
-  example_channels: string;
-  viral_hooks_library: any;
-  created_at: string;
-};
+// ============ HOOK DE SESIÓN ============
 
-export type Script = {
-  id: string;
-  user_id: string;
-  preset_id: string | null;
-  title: string;
-  topic: string;
-  language: "en" | "es" | "fr" | "de" | "pt" | "hi";
-  target_character_count: number;
-  actual_character_count: number;
-  hook_text: string | null;
-  body_text: string | null;
-  cta_text: string | null;
-  full_content_markdown: string | null;
-  visual_cues_json: any;
-  seo_metadata: any;
-  status: "draft" | "generating" | "completed" | "failed";
-  created_at: string;
-  updated_at: string;
-};
+/** Devuelve el usuario actual y su estado de carga. Reacciona a cambios de sesión. */
+export function useUser() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-export type ThumbnailJob = {
-  id: string;
-  user_id: string;
-  script_id: string | null;
-  prompt_used: string;
-  reference_type: "channel" | "video" | "manual";
-  reference_url: string | null;
-  generated_image_urls: string[];
-  aspect_ratio: "16:9" | "21:9" | "4:3";
-  created_at: string;
-};
+  useEffect(() => {
+    let active = true;
 
-/**
- * Auth functions
- */
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      setUser(data.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setUser(session?.user ?? null);
+      if (session?.user) setLoading(false);
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  return { user, loading };
+}
+
+// ============ HELPERS DE AUTH ============
+
 export async function signInWithGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
+  return supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: `${window.location.origin}/auth/callback`,
     },
   });
-  
-  if (error) throw error;
 }
 
-export async function signInWithEmail(email: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  
-  if (error) throw error;
+export async function signInWithPassword(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password });
 }
 
-export async function signUpWithEmail(email: string, password: string, fullName: string) {
-  const { error } = await supabase.auth.signUp({
+export async function signUpWithPassword(
+  email: string,
+  password: string,
+  fullName: string
+) {
+  return supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        full_name: fullName,
-      },
+      data: { full_name: fullName },
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
     },
   });
-  
-  if (error) throw error;
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  
-  if (error) throw error;
+  return supabase.auth.signOut();
 }
 
-/**
- * Get current user profile
- */
-export async function getProfile() {
-  const { data: { user} } = await supabase.auth.getUser();
-  
+// ============ HELPERS DE DATOS ============
+
+export async function getProfile(): Promise<Profile | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
-  
+
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
-  
-  if (error) throw error;
-  
+
+  if (error) return null;
   return data as Profile;
 }
 
-/**
- * Get user's subscription status
- */
-export async function getSubscription() {
-  const { data: { user} } = await supabase.auth.getUser();
-  
+export async function getUserBalance(): Promise<UserBalance | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
-  
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-  
-  if (error) throw error;
-  
-  return data as Subscription;
-}
 
-/**
- * Get user's balance/credits
- */
-export async function getUserBalance() {
-  const { data: { user} } = await supabase.auth.getUser();
-  
-  if (!user) return null;
-  
   const { data, error } = await supabase
     .from("user_balances")
     .select("*")
     .eq("user_id", user.id)
     .single();
-  
-  if (error) throw error;
-  
+
+  if (error) return null;
   return data as UserBalance;
-}
-
-/**
- * Save a generated script to Supabase
- */
-export async function saveScript(script: {
-  title: string;
-  topic: string;
-  language: string;
-  outline: any;
-  seo: any;
-  body: string;
-  visual_cues: any;
-  status?: string;
-}) {
-  const { data: { user} } = await supabase.auth.getUser();
-  
-  if (!user) throw new Error("User not authenticated");
-  
-  const { error } = await supabase
-    .from("scripts")
-    .insert({
-      user_id: user.id,
-      title: script.title,
-      topic: script.topic,
-      language: script.language,
-      outline: script.outline,
-      seo: script.seo,
-      body: script.body,
-      visual_cues_json: script.visual_cues,
-      status: script.status || "completed",
-    });
-  
-  if (error) throw error;
-  
-  return true;
-}
-
-/**
- * Update user balance after credit consumption
- */
-export async function updateUserCredits(
-  userId: string,
-  updates: {
-    script_character_credits?: number;
-    thumbnail_credits?: number;
-    voice_credits?: number;
-  }
-) {
-  const { error } = await supabase
-    .from("user_balances")
-    .update(updates)
-    .eq("user_id", userId);
-  
-  if (error) throw error;
-  
-  return true;
-}
-
-/**
- * Get available niches from the database
- */
-export async function getNiches(category?: string) {
-  let query = supabase.from("niche_database").select("*");
-  
-  if (category) {
-    query = query.eq("category", category);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) throw error;
-  
-  return data as NicheDatabase[];
-}
-
-/**
- * Save a preset for future use
- */
-export async function savePreset(preset: {
-  name: string;
-  target_niche: string;
-  tone: string;
-  audience_profile: string;
-  pacing: string;
-  narrative_structure_rules: any;
-  forbidden_words: string[];
-}) {
-  const { data: { user} } = await supabase.auth.getUser();
-  
-  if (!user) throw new Error("User not authenticated");
-  
-  const { error } = await supabase
-    .from("presets")
-    .insert({
-      user_id: user.id,
-      name: preset.name,
-      target_niche: preset.target_niche,
-      tone: preset.tone,
-      audience_profile: preset.audience_profile,
-      pacing: preset.pacing,
-      narrative_structure_rules: preset.narrative_structure_rules,
-      forbidden_words: preset.forbidden_words,
-    });
-  
-  if (error) throw error;
-  
-  return true;
 }

@@ -6,6 +6,7 @@ import {
   Vault,
   LayoutDashboard,
 } from "lucide-react";
+import { UserMenu } from "@/components/user-menu";
 
 const features = [
   {
@@ -44,7 +45,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-violet-950 via-blue-950 to-indigo-950 text-white">
       {/* Hero */}
-      <header className="px-4 py-24 text-center">
+      <header className="relative px-4 py-24 text-center">
+        <nav className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
+          <span className="flex items-center gap-2 font-bold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-600 text-sm font-bold text-white">
+              S
+            </span>
+            Scripzy
+          </span>
+          <UserMenu />
+        </nav>
         <div className="mx-auto max-w-3xl">
           <span className="mb-4 inline-block rounded-full border border-violet-400/40 bg-violet-500/10 px-4 py-1 text-xs font-medium uppercase tracking-wider text-violet-300">
             AI YouTube Creator CRM
