@@ -2,13 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, FileText, Tags, Clock, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  FileText,
+  Tags,
+  Clock,
+  AlertCircle,
+  History,
+} from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { Input } from "@/componentsui/ui/input";
 import { Select, SelectOption } from "@/componentsui/ui/select";
 import { Alert, AlertTitle, AlertDescription } from "@/componentsui/ui/alert";
 import type { GeneratedScript } from "@/lib/script-engine";
-import { useUser } from "@/lib/supabase";
+import {
+  useUser,
+  saveScript as saveScriptToDb,
+  listMyScripts,
+  getScriptById,
+  type ScriptHistoryItem,
+} from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
 
 export default function ScriptLabPage() {
@@ -32,6 +46,24 @@ export default function ScriptLabPage() {
   const [error, setError] = useState<string | null>(null);
   const [script, setScript] = useState<GeneratedScript | null>(null);
 
+  // Guardado en Supabase
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [viewingHistory, setViewingHistory] = useState(false);
+
+  // Historial de guiones
+  const [history, setHistory] = useState<ScriptHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    setHistoryLoading(true);
+    listMyScripts(user.id).then((items) => {
+      setHistory(items);
+      setHistoryLoading(false);
+    });
+  }, [user]);
+
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     if (!topic.trim() || loading) return;
@@ -39,6 +71,9 @@ export default function ScriptLabPage() {
     setLoading(true);
     setError(null);
     setScript(null);
+    setSaveStatus("idle");
+    setSaveError(null);
+    setViewingHistory(false);
 
     try {
       const res = await fetch("/api/generate-script", {
@@ -62,11 +97,81 @@ export default function ScriptLabPage() {
       }
 
       setScript(data.script as GeneratedScript);
+
+      // Auto-guardado en la tabla scripts de Supabase
+      const generated = data.script as GeneratedScript;
+      if (user) {
+        setSaveStatus("saving");
+        const { error: saveErr } = await saveScriptToDb({
+          userId: user.id,
+          title: generated.title,
+          topic: topic.trim(),
+          language,
+          characterCount: generated.character_count,
+          hookText: generated.outline.hook,
+          ctaText: generated.outline.cta,
+          bodyText: generated.body,
+          visualCuesJson: {
+            outline: generated.outline,
+            visual_cues: generated.visual_cues,
+          },
+          seoMetadata: generated.seo,
+          status: generated.status,
+        });
+
+        if (saveErr) {
+          setSaveStatus("error");
+          setSaveError(saveErr);
+        } else {
+          setSaveStatus("saved");
+          listMyScripts(user.id).then(setHistory);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadFromHistory(id: string) {
+    if (loading) return;
+    const row = await getScriptById(id);
+    if (!row) return;
+
+    const json = (row.visual_cues_json ?? {}) as {
+      outline?: GeneratedScript["outline"];
+      visual_cues?: GeneratedScript["visual_cues"];
+    };
+    const seo = (row.seo_metadata ?? {
+      titles: [],
+      description: "",
+      tags: [],
+    }) as GeneratedScript["seo"];
+    const body = row.body_text ?? "";
+
+    const restored: GeneratedScript = {
+      title: row.title,
+      outline: json.outline ?? {
+        hook: row.hook_text ?? "",
+        retention_points: [],
+        climax: "",
+        cta: row.cta_text ?? "",
+        sections: [],
+      },
+      seo,
+      body,
+      word_count: body.split(/\s+/).filter(Boolean).length,
+      character_count: row.actual_character_count ?? body.length,
+      visual_cues: json.visual_cues ?? [],
+      status: (row.status as GeneratedScript["status"]) ?? "completed",
+    };
+
+    setScript(restored);
+    setViewingHistory(true);
+    setSaveStatus("saved");
+    setSaveError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   if (authLoading) {
@@ -202,6 +307,51 @@ export default function ScriptLabPage() {
                 </Alert>
               )}
             </div>
+
+            {/* Historial de guiones */}
+            <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/60 p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <History className="h-5 w-5 text-amber-400" />
+                Mis guiones
+              </h2>
+
+              {historyLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando historial...
+                </div>
+              ) : history.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  Aún no tienes guiones guardados. Genera tu primero y aparecerá
+                  aquí automáticamente.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {history.map((h) => (
+                    <li key={h.id}>
+                      <button
+                        type="button"
+                        onClick={() => loadFromHistory(h.id)}
+                        className="w-full rounded border border-slate-700 bg-slate-800/60 px-3 py-2 text-left text-sm transition-colors hover:border-violet-500 hover:bg-slate-800"
+                      >
+                        <span className="block truncate font-medium text-slate-200">
+                          {h.title}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(h.created_at).toLocaleString("es", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          · {(h.actual_character_count ?? 0).toLocaleString()} caracteres
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </section>
 
           {/* Resultado */}
@@ -250,7 +400,32 @@ export default function ScriptLabPage() {
                     <span className="rounded bg-slate-800 px-2 py-1">
                       Estado: {script.status}
                     </span>
+                    {saveStatus === "saving" && (
+                      <span className="rounded bg-violet-500/20 px-2 py-1 text-violet-300">
+                        Guardando en tu historial…
+                      </span>
+                    )}
+                    {saveStatus === "saved" && (
+                      <span className="rounded bg-emerald-500/10 px-2 py-1 text-emerald-300">
+                        ✓ Guardado en Supabase
+                      </span>
+                    )}
+                    {saveStatus === "error" && (
+                      <span className="rounded bg-red-500/10 px-2 py-1 text-red-300">
+                        Error al guardar
+                      </span>
+                    )}
+                    {viewingHistory && (
+                      <span className="rounded bg-amber-500/10 px-2 py-1 text-amber-300">
+                        Cargado desde tu historial
+                      </span>
+                    )}
                   </div>
+                  {saveStatus === "error" && saveError && (
+                    <p className="mt-2 text-xs text-red-400">
+                      No se pudo guardar: {saveError}
+                    </p>
+                  )}
                 </div>
 
                 {/* SEO */}

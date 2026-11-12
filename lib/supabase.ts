@@ -168,3 +168,75 @@ export async function getUserBalance(): Promise<UserBalance | null> {
   if (error) return null;
   return data as UserBalance;
 }
+
+// ============ HELPERS DE GUIONES ============
+
+export type ScriptHistoryItem = {
+  id: string;
+  title: string;
+  topic: string;
+  actual_character_count: number | null;
+  status: string;
+  created_at: string;
+};
+
+/** Guarda un guion generado en la tabla scripts (RLS exige user_id = auth.uid()). */
+export async function saveScript(params: {
+  userId: string;
+  title: string;
+  topic: string;
+  language: string;
+  characterCount: number;
+  hookText: string;
+  ctaText: string;
+  bodyText: string;
+  visualCuesJson: unknown;
+  seoMetadata: unknown;
+  status: string;
+}): Promise<{ error: string | null }> {
+  const { error } = await supabase.from("scripts").insert({
+    user_id: params.userId,
+    title: params.title,
+    topic: params.topic,
+    language: params.language,
+    target_character_count: 0,
+    actual_character_count: params.characterCount,
+    hook_text: params.hookText,
+    cta_text: params.ctaText,
+    body_text: params.bodyText,
+    full_content_markdown: params.bodyText,
+    visual_cues_json: params.visualCuesJson,
+    seo_metadata: params.seoMetadata,
+    status: params.status,
+  });
+
+  return { error: error ? error.message : null };
+}
+
+/** Lista los guiones del usuario (más recientes primero). */
+export async function listMyScripts(
+  userId: string,
+  limit = 20
+): Promise<ScriptHistoryItem[]> {
+  const { data, error } = await supabase
+    .from("scripts")
+    .select("id, title, topic, actual_character_count, status, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) return [];
+  return (data ?? []) as ScriptHistoryItem[];
+}
+
+/** Trae un guion completo por id (solo si pertenece al usuario, por RLS). */
+export async function getScriptById(id: string) {
+  const { data, error } = await supabase
+    .from("scripts")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return null;
+  return data as Record<string, any>;
+}
