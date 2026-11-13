@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,6 +33,19 @@ export const metadata: Metadata = {
       "Guiones largos con IA, miniaturas de alto CTR y nichos rentables con datos reales de YouTube.",
     images: ["/og.png"],
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black",
+    title: "Scripzy",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0b0f",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

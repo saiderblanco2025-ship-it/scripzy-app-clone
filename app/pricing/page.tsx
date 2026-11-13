@@ -9,6 +9,14 @@ import { supabase, useUser, getUserBalance } from "@/lib/supabase";
 import { PLANS, type PlanTier } from "@/lib/stripe-plans";
 import { UserMenu } from "@/components/user-menu";
 
+const TOPUPS = [
+  { name: "500K caracteres", price: "8.99", detail: "~14 guiones largos extra · pago único" },
+  { name: "1M caracteres", price: "14.99", detail: "~28 guiones largos extra · pago único" },
+  { name: "50 miniaturas", price: "4.99", detail: "50 miniaturas IA extra · pago único" },
+  { name: "200 miniaturas", price: "19.99", detail: "200 miniaturas IA extra · pago único" },
+  { name: "500 miniaturas", price: "44.99", detail: "500 miniaturas IA extra · pago único" },
+];
+
 export default function PricingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
@@ -177,6 +185,9 @@ export default function PricingPage() {
                   </span>
                   <span className="text-sm text-slate-400">/mes</span>
                 </div>
+                <p className="mt-2 text-xs text-slate-400">
+                  Perfecto para: {plan.audience}
+                </p>
 
                 <ul className="mt-6 flex-1 space-y-2.5 text-sm text-slate-300">
                   {plan.features.map((f) => (
@@ -219,6 +230,41 @@ export default function PricingPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* ===== TOP-UPS (recargas de créditos) ===== */}
+        <div className="mt-16">
+          <div className="mb-8 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+              Recargas
+            </span>
+            <h3 className="mt-2 text-2xl font-bold">
+              ¿Te quedaste sin créditos a mitad de mes?
+            </h3>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-slate-400">
+              Packs de recarga únicos (pago único, sin suscripción). Comprados
+              una vez, no expiran.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {TOPUPS.map((t) => (
+              <div
+                key={t.name}
+                className="relative flex flex-col rounded-lg border border-slate-700 bg-slate-900/60 p-5"
+              >
+                <span className="absolute -top-3 right-4 rounded-full bg-amber-500/90 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-950">
+                  Próximamente
+                </span>
+                <p className="text-sm font-semibold text-slate-300">{t.name}</p>
+                <p className="mt-1 text-2xl font-bold text-white">${t.price}</p>
+                <p className="mt-1 text-xs text-slate-400">{t.detail}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs text-slate-500">
+            Mientras llegan los packs, puedes subir de plan para recibir tus
+            créditos mensuales de inmediato.
+          </p>
         </div>
 
         <p className="mt-10 text-center text-xs text-slate-500">

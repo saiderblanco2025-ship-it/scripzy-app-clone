@@ -96,6 +96,37 @@ const testimonials = [
   },
 ];
 
+const problems = [
+  {
+    problem: "¿No sabes qué nicho elegir?",
+    pain: "Pasas semanas probando ideas sin saber si tienen potencial real de monetización.",
+    solution: "Explora nichos con datos reales",
+    win: "Métricas de RPM, demanda, competencia e indicador faceless automáticos, con videos reales de YouTube.",
+  },
+  {
+    problem: "¿Pierdes horas investigando?",
+    pain: "Analizas manualmente canales, títulos y miniaturas sin datos concretos de qué funciona.",
+    solution: "Top Patterns en un clic",
+    win: "Analiza los videos más virales de tu tema y extrae la fórmula exacta: patrones, estructura y ángulos.",
+  },
+  {
+    problem: "¿Tu guion no retiene?",
+    pain: "El guion se siente plano, la gente se va en el primer minuto y el video no despega.",
+    solution: "Guiones largos con gancho",
+    win: "El Script Lab genera guiones con gancho probado, estructura por secciones, SEO y tags listos para publicar.",
+  },
+];
+
+const comparisons = [
+  { label: "Guiones largos con estructura", scripzy: "✓ 4 fases + gancho", others: "≈ Texto plano", manual: "✗ Horas" },
+  { label: "Nichos con datos reales de YouTube", scripzy: "✓ Incluido", others: "✗", manual: "✗" },
+  { label: "Miniaturas generadas con IA", scripzy: "✓ Incluido", others: "✗", manual: "✗" },
+  { label: "Análisis de patrones virales", scripzy: "✓ Incluido", others: "✗", manual: "≈ Días" },
+  { label: "Títulos y tags SEO automáticos", scripzy: "✓ Incluido", others: "≈ Parcial", manual: "✗" },
+  { label: "Historial y presets propios", scripzy: "✓ Incluido", others: "✗", manual: "✗" },
+  { label: "Costo mensual total", scripzy: "desde $0", others: "$20+", manual: "$62+" },
+];
+
 const faqs = [
   {
     q: "¿Puedo probar gratis?",
@@ -314,6 +345,131 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ===== ¿Te suena familiar? ===== */}
+      <section className="border-t border-white/10 bg-slate-950/50 px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-rose-400">
+              ¿Te suena familiar?
+            </span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
+              El problema que todos enfrentan
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-slate-400">
+              Crear contenido exitoso en YouTube no debería ser un juego de
+              adivinanzas.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {problems.map((p) => (
+              <div
+                key={p.problem}
+                className="grid grid-cols-1 gap-4 rounded-xl border border-slate-700/60 bg-slate-900/50 p-6 md:grid-cols-2"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-400">
+                    ✗
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-white">{p.problem}</h3>
+                    <p className="mt-1 text-sm text-slate-400">{p.pain}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 border-slate-700/60 md:border-l md:pl-6">
+                  <span className="mt-0.5 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
+                    ✓
+                  </span>
+                  <div>
+                    <h3 className="font-semibold text-emerald-300">
+                      {p.solution}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-400">{p.win}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Comparativa ===== */}
+      <section className="px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-violet-400">
+              La diferencia es clara
+            </span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
+              Scripzy vs. el resto del mundo
+            </h2>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-700/60 bg-slate-900/50">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-700/60 text-xs uppercase tracking-wider text-slate-500">
+                  <th className="px-5 py-4">Capacidad</th>
+                  <th className="px-5 py-4 text-center text-violet-300">
+                    Scripzy
+                  </th>
+                  <th className="px-5 py-4 text-center">Otras IAs</th>
+                  <th className="px-5 py-4 text-center">A mano</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisons.map((c) => (
+                  <tr
+                    key={c.label}
+                    className="border-b border-slate-800/60 last:border-0"
+                  >
+                    <td className="px-5 py-4 font-medium text-slate-200">
+                      {c.label}
+                    </td>
+                    <td className="px-5 py-4 text-center font-semibold text-emerald-400">
+                      {c.scripzy}
+                    </td>
+                    <td className="px-5 py-4 text-center text-slate-500">
+                      {c.others}
+                    </td>
+                    <td className="px-5 py-4 text-center text-slate-500">
+                      {c.manual}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Ahorro */}
+          <div className="mt-10 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-slate-900/70 to-slate-950/70 p-8 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+              Ahorra dinero
+            </span>
+            <h3 className="mt-2 text-2xl font-bold">
+              Comprarlo por separado cuesta más de <span className="text-amber-400">$62/mes</span>
+            </h3>
+            <div className="mx-auto mt-6 grid max-w-2xl grid-cols-1 gap-3 text-sm sm:grid-cols-4">
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-slate-400">Guiones con IA</p>
+                <p className="mt-1 font-bold text-slate-500 line-through">$20/mes</p>
+              </div>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-slate-400">Miniaturas con IA</p>
+                <p className="mt-1 font-bold text-slate-500 line-through">$15/mes</p>
+              </div>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-slate-400">Buscador de nichos</p>
+                <p className="mt-1 font-bold text-slate-500 line-through">$27/mes</p>
+              </div>
+              <div className="rounded-lg border-2 border-violet-500 bg-violet-950/40 p-4">
+                <p className="font-semibold text-violet-300">Scripzy Pro</p>
+                <p className="mt-1 text-lg font-bold text-white">$19/mes</p>
+                <p className="mt-1 text-xs text-emerald-400">todo incluido 🎉</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

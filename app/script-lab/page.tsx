@@ -191,6 +191,7 @@ export default function ScriptLabPage() {
 
   // ===== Exportación del guion (copiar / txt / Word) =====
   const [copied, setCopied] = useState(false);
+  const [copiedTitle, setCopiedTitle] = useState<number | null>(null);
 
   function buildExportText(): string {
     if (!script) return "";
@@ -503,9 +504,32 @@ export default function ScriptLabPage() {
                     {script.seo.titles.map((t, i) => (
                       <li
                         key={i}
-                        className="rounded border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm"
+                        className="group rounded border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm"
                       >
-                        {t}
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 text-left"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(t);
+                              setCopiedTitle(i);
+                              setTimeout(() => setCopiedTitle(null), 2000);
+                            } catch {
+                              /* sin permiso */
+                            }
+                          }}
+                        >
+                          <span className="text-slate-200">{t}</span>
+                          <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors group-hover:text-violet-400">
+                            {copiedTitle === i ? (
+                              <span className="text-emerald-400">¡Copiado!</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1">
+                                <Copy className="h-3 w-3" /> A/B · copiar
+                              </span>
+                            )}
+                          </span>
+                        </button>
                       </li>
                     ))}
                   </ul>

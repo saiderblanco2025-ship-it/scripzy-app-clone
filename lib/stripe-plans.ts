@@ -14,6 +14,7 @@ export type PlanConfig = {
   scriptChars: number;
   thumbnailCredits: number;
   maxPresets: number;
+  audience: string;
   features: string[];
   popular?: boolean;
   priceIdEnv?: "STRIPE_PRICE_STARTER" | "STRIPE_PRICE_PRO" | "STRIPE_PRICE_PREMIUM" | "STRIPE_PRICE_ULTRA";
@@ -35,6 +36,7 @@ export const PLANS: PlanConfig[] = [
     scriptChars: 50000,
     thumbnailCredits: 2,
     maxPresets: 3,
+    audience: "Principiantes que quieren probar",
     features: [
       "50,000 caracteres de guion",
       "2 miniaturas",
@@ -49,6 +51,7 @@ export const PLANS: PlanConfig[] = [
     scriptChars: 150000,
     thumbnailCredits: 5,
     maxPresets: 5,
+    audience: "Canales con 1-2 videos por semana",
     priceIdEnv: "STRIPE_PRICE_STARTER",
     features: [
       "150,000 caracteres de guion",
@@ -64,6 +67,7 @@ export const PLANS: PlanConfig[] = [
     scriptChars: 400000,
     thumbnailCredits: 15,
     maxPresets: 10,
+    audience: "Canales en crecimiento, 1 video al día",
     priceIdEnv: "STRIPE_PRICE_PRO",
     popular: true,
     features: [
@@ -80,6 +84,7 @@ export const PLANS: PlanConfig[] = [
     scriptChars: 1000000,
     thumbnailCredits: 40,
     maxPresets: 25,
+    audience: "Canales faceless serios, varios videos al día",
     priceIdEnv: "STRIPE_PRICE_PREMIUM",
     features: [
       "1,000,000 caracteres de guion",
@@ -95,6 +100,7 @@ export const PLANS: PlanConfig[] = [
     scriptChars: 3000000,
     thumbnailCredits: 100,
     maxPresets: 100,
+    audience: "Agencias y estudios de producción",
     priceIdEnv: "STRIPE_PRICE_ULTRA",
     features: [
       "3,000,000 caracteres de guion",
