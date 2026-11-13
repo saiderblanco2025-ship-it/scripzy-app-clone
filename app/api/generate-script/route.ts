@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateScriptStreaming, type GeneratedScript } from "@/lib/script-engine";
+import { ENGINE_SECRET, ENGINE_SECRET_HEADER } from "@/lib/engine-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +42,10 @@ async function generateWithN8nEngine(params: {
   try {
     const res = await fetch(N8N_ENGINE_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        [ENGINE_SECRET_HEADER]: ENGINE_SECRET,
+      },
       body: JSON.stringify({
         topic: params.topic,
         language: params.language,

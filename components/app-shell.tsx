@@ -10,6 +10,7 @@ import {
   BookOpen,
   Crown,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { getUserBalance } from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/script-lab", label: "Script Lab", icon: Sparkles, key: "script-lab" },
   { href: "/nichos", label: "Buscador de Nichos", icon: Compass, key: "nichos" },
   { href: "/miniaturas", label: "Miniaturas", icon: ImageIcon, key: "miniaturas" },
+  { href: "/patrones", label: "Top Patterns", icon: TrendingUp, key: "patrones" },
   { href: "/recursos", label: "Recursos", icon: BookOpen, key: "recursos" },
   { href: "/pricing", label: "Planes", icon: Crown, key: "pricing" },
 ];

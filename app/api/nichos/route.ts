@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { ENGINE_SECRET, ENGINE_SECRET_HEADER } from "@/lib/engine-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,10 @@ export async function POST(request: Request) {
 
     const res = await fetch(N8N_NICHOS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        [ENGINE_SECRET_HEADER]: ENGINE_SECRET,
+      },
       body: JSON.stringify({
         keyword: keyword.trim().slice(0, 100),
         maxResults: Math.min(50, Math.max(1, Number(body?.maxResults) || 12)),
