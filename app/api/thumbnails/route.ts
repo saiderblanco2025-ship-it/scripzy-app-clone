@@ -204,6 +204,83 @@ export async function POST(request: Request) {
 }
 
 /**
+ * DELETE /api/thumbnails
+ * Body: { id }
+ * Header: Authorization: Bearer <access_token>
+ * Borra la miniatura de la biblioteca del usuario (Storage + fila).
+ */
+export async function DELETE(request: Request) {
+  try {
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+    const userId = await verifyToken(token);
+    if (!userId) {
+      return NextResponse.json({ error: "Sesión inválida" }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const id = typeof body?.id === "string" ? body.id : "";
+    if (!id) {
+      return NextResponse.json({ error: "Falta el id" }, { status: 400 });
+    }
+
+    const admin = adminClient();
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Configuración del servidor incompleta" },
+        { status: 500 }
+      );
+    }
+
+    // Solo miniaturas del propio usuario
+    const { data: row, error } = await admin
+      .from("thumbnail_jobs")
+      .select("id, generated_image_urls")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error || !row) {
+      return NextResponse.json(
+        { error: "Miniatura no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Borrar también el objeto de Storage si está localizándolo por URL pública
+    const publicUrl = (row.generated_image_urls as string[] | null)?.[0] ?? "";
+    const marker = "/storage/v1/object/public/miniaturas/";
+    const idx = publicUrl.indexOf(marker);
+    if (idx >= 0) {
+      const objectPath = publicUrl.slice(idx + marker.length);
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+      await fetch(
+        `${SUPABASE_URL}/storage/v1/object/miniaturas/${objectPath}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+          },
+        }
+      );
+    }
+
+    await admin.from("thumbnail_jobs").delete().eq("id", id);
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error("Error borrando miniatura:", error);
+    return NextResponse.json(
+      { error: "Error borrando la miniatura" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * GET /api/thumbnails
  * Header: Authorization: Bearer <access_token>
  * Devuelve el historial de miniaturas del usuario (últimas 24).
@@ -233,7 +310,7 @@ export async function GET(request: Request) {
       .select("id, prompt_used, generated_image_urls, aspect_ratio, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(24);
+      .limit(60);
 
     if (error) {
       console.error("[thumbnail_jobs]", error.message);

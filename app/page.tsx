@@ -663,6 +663,12 @@ export default function HomePage() {
             <Link href="/script-lab" className="hover:text-slate-300">
               Script Lab
             </Link>
+            <Link href="/voces" className="hover:text-slate-300">
+              Voces IA
+            </Link>
+            <Link href="/research" className="hover:text-slate-300">
+              Research
+            </Link>
             <Link href="/dashboard" className="hover:text-slate-300">
               Dashboard
             </Link>

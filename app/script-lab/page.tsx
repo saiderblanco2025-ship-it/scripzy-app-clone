@@ -14,6 +14,7 @@ import {
   Download,
   Check,
   Coins,
+  Star,
 } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { Input } from "@/componentsui/ui/input";
@@ -59,6 +60,10 @@ export default function ScriptLabPage() {
   // Historial de guiones
   const [history, setHistory] = useState<ScriptHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [historyDays, setHistoryDays] = useState<number>(0); // 0 = todos
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [usageNote, setUsageNote] = useState<{
     charsUsed: number;
     balanceAfter: number | null;
@@ -72,7 +77,47 @@ export default function ScriptLabPage() {
       setHistory(items);
       setHistoryLoading(false);
     });
+    try {
+      const stored = localStorage.getItem(`scripzy-favorites-${user.id}`);
+      setFavorites(stored ? (JSON.parse(stored) as string[]) : []);
+    } catch {
+      setFavorites([]);
+    }
   }, [user]);
+
+  function toggleFavorite(id: string) {
+    if (!user) return;
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem(`scripzy-favorites-${user.id}`, JSON.stringify(next));
+      } catch {
+        /* sin storage */
+      }
+      return next;
+    });
+  }
+
+  // Filtrado (solo guardo la comparación de texto/fecha, sin mutar `history`)
+  const filteredHistory = history.filter((h) => {
+    if (showOnlyFavorites && !favorites.includes(h.id)) return false;
+    if (historyQuery.trim()) {
+      const q = historyQuery.trim().toLowerCase();
+      const hay = `${h.title} ${h.topic}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (historyDays > 0) {
+      const cutoff = Date.now() - historyDays * 86_400_000;
+      if (new Date(h.created_at).getTime() < cutoff) return false;
+    }
+    return true;
+  });
+  const historySorted = [...filteredHistory].sort((a, b) => {
+    const fa = favorites.includes(a.id) ? 0 : 1;
+    const fb = favorites.includes(b.id) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -411,22 +456,87 @@ export default function ScriptLabPage() {
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <History className="h-5 w-5 text-amber-400" />
                 Mis guiones
+                <span className="ml-auto text-xs font-normal text-slate-500">
+                  {historySorted.length} de {history.length}
+                </span>
               </h2>
+
+              {/* Buscador + filtros */}
+              {history.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <input
+                    type="text"
+                    value={historyQuery}
+                    onChange={(e) => setHistoryQuery(e.target.value)}
+                    placeholder="Buscar por título o tema…"
+                    className="w-full rounded-md border border-slate-700 bg-slate-950/60 px-3 py-2 text-xs outline-none placeholder:text-slate-600 focus:border-violet-500"
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[
+                      { d: 0, label: "Todos" },
+                      { d: 7, label: "7 días" },
+                      { d: 30, label: "30 días" },
+                      { d: 90, label: "90 días" },
+                    ].map(({ d, label }) => (
+                      <button
+                        key={d}
+                        onClick={() => setHistoryDays(d)}
+                        className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                          historyDays === d
+                            ? "bg-violet-600 text-white"
+                            : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                      className={`flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        showOnlyFavorites
+                          ? "bg-amber-500 text-amber-950"
+                          : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Star
+                        className={`h-3 w-3 ${showOnlyFavorites ? "fill-amber-950" : ""}`}
+                      />
+                      Favoritos
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {historyLoading ? (
                 <div className="flex items-center gap-2 text-sm text-slate-400">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Cargando historial...
                 </div>
-              ) : history.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  Aún no tienes guiones guardados. Genera tu primero y aparecerá
-                  aquí automáticamente.
-                </p>
+              ) : historySorted.length === 0 ? (
+                history.length === 0 ? (
+                  <p className="text-sm text-slate-400">
+                    Aún no tienes guiones guardados. Genera tu primero y
+                    aparecerá aquí automáticamente.
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    Ningún guion coincide con el filtro.{" "}
+                    <button
+                      onClick={() => {
+                        setHistoryQuery("");
+                        setHistoryDays(0);
+                        setShowOnlyFavorites(false);
+                      }}
+                      className="text-violet-400 underline hover:text-violet-300"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </p>
+                )
               ) : (
                 <ul className="space-y-2">
-                  {history.map((h) => (
-                    <li key={h.id}>
+                  {historySorted.map((h) => (
+                    <li key={h.id} className="flex items-stretch gap-1.5">
                       <button
                         type="button"
                         onClick={() => loadFromHistory(h.id)}
@@ -444,6 +554,24 @@ export default function ScriptLabPage() {
                           })}{" "}
                           · {(h.actual_character_count ?? 0).toLocaleString()} caracteres
                         </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleFavorite(h.id)}
+                        className="shrink-0 rounded border border-slate-700 bg-slate-800/60 px-2 text-slate-500 transition-colors hover:border-amber-500/50 hover:text-amber-400"
+                        title={
+                          favorites.includes(h.id)
+                            ? "Quitar de favoritos"
+                            : "Añadir a favoritos"
+                        }
+                      >
+                        <Star
+                          className={`h-4 w-4 ${
+                            favorites.includes(h.id)
+                              ? "fill-amber-400 text-amber-400"
+                              : ""
+                          }`}
+                        />
                       </button>
                     </li>
                   ))}

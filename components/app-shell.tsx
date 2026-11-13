@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Radar,
   Mic,
+  Images,
 } from "lucide-react";
 import { getUserBalance, getProfile } from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, key: "dashboard" },
   { href: "/script-lab", label: "Script Lab", icon: Sparkles, key: "script-lab" },
   { href: "/voces", label: "Voces IA", icon: Mic, key: "voces" },
+  { href: "/biblioteca", label: "Biblioteca", icon: Images, key: "biblioteca" },
   { href: "/nichos", label: "Buscador de Nichos", icon: Compass, key: "nichos" },
   { href: "/miniaturas", label: "Miniaturas", icon: ImageIcon, key: "miniaturas" },
   { href: "/patrones", label: "Top Patterns", icon: TrendingUp, key: "patrones" },
