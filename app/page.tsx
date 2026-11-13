@@ -438,6 +438,15 @@ export default function HomePage() {
             <Link href="/dashboard" className="hover:text-slate-300">
               Dashboard
             </Link>
+            <Link href="/recursos" className="hover:text-slate-300">
+              Recursos
+            </Link>
+            <Link href="/terminos" className="hover:text-slate-300">
+              Términos
+            </Link>
+            <Link href="/privacidad" className="hover:text-slate-300">
+              Privacidad
+            </Link>
           </div>
           <span>Scripzy.app — Clone build · Next.js · Supabase · Stripe · IA</span>
         </div>

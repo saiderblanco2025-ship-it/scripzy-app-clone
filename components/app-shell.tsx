@@ -11,8 +11,9 @@ import {
   Crown,
   FileText,
   TrendingUp,
+  ShieldCheck,
 } from "lucide-react";
-import { getUserBalance } from "@/lib/supabase";
+import { getUserBalance, getProfile } from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
 
 const NAV_ITEMS = [
@@ -24,6 +25,13 @@ const NAV_ITEMS = [
   { href: "/recursos", label: "Recursos", icon: BookOpen, key: "recursos" },
   { href: "/pricing", label: "Planes", icon: Crown, key: "pricing" },
 ];
+
+const ADMIN_ITEM = {
+  href: "/admin",
+  label: "Admin",
+  icon: ShieldCheck,
+  key: "admin",
+};
 
 function formatCredits(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(".0", "") + "M";
@@ -42,6 +50,7 @@ export function AppShell({
     script_character_credits: number;
     thumbnail_credits: number;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let activeQuery = true;
@@ -54,10 +63,16 @@ export function AppShell({
         });
       }
     });
+    getProfile().then((p) => {
+      if (!activeQuery) return;
+      setIsAdmin(p?.role === "superadmin");
+    });
     return () => {
       activeQuery = false;
     };
   }, []);
+
+  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
 
   const linkCls = (itemKey: string) =>
     `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
@@ -81,7 +96,7 @@ export function AppShell({
 
           {/* Navegación */}
           <nav className="space-y-1">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link key={item.key} href={item.href} className={linkCls(item.key)}>
                 <item.icon className="h-4 w-4 shrink-0" />
                 {item.label}
@@ -132,7 +147,7 @@ export function AppShell({
           <UserMenu />
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 text-sm">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.key}
               href={item.href}

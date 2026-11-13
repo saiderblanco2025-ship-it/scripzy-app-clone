@@ -10,6 +10,9 @@ import {
   Clock,
   AlertCircle,
   History,
+  Copy,
+  Download,
+  Check,
 } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { Input } from "@/componentsui/ui/input";
@@ -184,6 +187,73 @@ export default function ScriptLabPage() {
     setSaveStatus("saved");
     setSaveError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ===== Exportación del guion (copiar / txt / Word) =====
+  const [copied, setCopied] = useState(false);
+
+  function buildExportText(): string {
+    if (!script) return "";
+    const title = script.title ?? "Guion Scripzy";
+    const parts = [title.toUpperCase(), ""];
+    if (script.outline?.hook) {
+      parts.push("== GANCHO ==", script.outline.hook, "");
+    }
+    parts.push("== GUION ==", script.body);
+    if (script.seo?.description) {
+      parts.push("", "== DESCRIPCIÓN SEO ==", script.seo.description);
+    }
+    if (script.seo?.tags?.length) {
+      parts.push("", "== TAGS ==", script.seo.tags.map((t) => "#" + t).join(" "));
+    }
+    return parts.join("\n");
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  async function copyScript() {
+    if (!script) return;
+    try {
+      await navigator.clipboard.writeText(buildExportText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* permiso denegado */
+    }
+  }
+
+  function downloadExport(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadTxt() {
+    if (!script) return;
+    downloadExport(
+      new Blob([buildExportText()], { type: "text/plain;charset=utf-8" }),
+      "guion-scripzy.txt"
+    );
+  }
+
+  function downloadWord() {
+    if (!script) return;
+    const html =
+      '<html><head><meta charset="utf-8"></head><body><div style="font-family:Calibri, sans-serif; font-size:12pt; white-space:pre-wrap;">' +
+      escapeHtml(buildExportText()) +
+      "</div></body></html>";
+    downloadExport(
+      new Blob([html], { type: "application/msword;charset=utf-8" }),
+      "guion-scripzy.doc"
+    );
   }
 
   if (authLoading) {
@@ -476,7 +546,27 @@ export default function ScriptLabPage() {
 
                 {/* Guion completo */}
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6">
-                  <h3 className="mb-3 font-semibold">Guion completo</h3>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-semibold">Guion completo</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={copyScript}>
+                        {copied ? (
+                          <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {copied ? "¡Copiado!" : "Copiar"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={downloadTxt}>
+                        <Download className="mr-1.5 h-3.5 w-3.5" />
+                        .txt
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={downloadWord}>
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Word
+                      </Button>
+                    </div>
+                  </div>
                   <pre className="max-h-[500px] overflow-y-auto whitespace-pre-wrap rounded bg-slate-950 p-4 text-xs leading-relaxed text-slate-300">
                     {script.body}
                   </pre>
