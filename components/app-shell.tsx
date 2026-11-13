@@ -12,6 +12,7 @@ import {
   FileText,
   TrendingUp,
   ShieldCheck,
+  Radar,
 } from "lucide-react";
 import { getUserBalance, getProfile } from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/nichos", label: "Buscador de Nichos", icon: Compass, key: "nichos" },
   { href: "/miniaturas", label: "Miniaturas", icon: ImageIcon, key: "miniaturas" },
   { href: "/patrones", label: "Top Patterns", icon: TrendingUp, key: "patrones" },
+  { href: "/research", label: "Research", icon: Radar, key: "research" },
   { href: "/recursos", label: "Recursos", icon: BookOpen, key: "recursos" },
   { href: "/pricing", label: "Planes", icon: Crown, key: "pricing" },
 ];
