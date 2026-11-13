@@ -79,8 +79,12 @@ export async function POST(request: Request) {
       .eq("user_id", userId)
       .single();
 
+    // Cuenta del propietario: créditos ilimitados (nunca se bloquea ni se descuenta)
+    const OWNER_ID = "77190e6b-75f1-4ebb-b417-5396b654191e";
+    const isOwner = userId === OWNER_ID;
+
     const currentCredits = Number(balanceRow?.thumbnail_credits ?? 0);
-    if (currentCredits < 1) {
+    if (currentCredits < 1 && !isOwner) {
       return NextResponse.json(
         {
           error:
@@ -175,17 +179,17 @@ export async function POST(request: Request) {
       aspect_ratio: "16:9",
     });
 
-    // 5) Descontar 1 crédito de miniatura
-    const { data: updated } = await admin
-      .from("user_balances")
-      .update({ thumbnail_credits: Math.max(0, currentCredits - 1) })
-      .eq("user_id", userId)
-      .select("thumbnail_credits")
-      .single();
+    // 5) Descontar 1 crédito de miniatura (el propietario no paga)
+    if (!isOwner) {
+      await admin
+        .from("user_balances")
+        .update({ thumbnail_credits: Math.max(0, currentCredits - 1) })
+        .eq("user_id", userId);
+    }
 
     return NextResponse.json({
       imageUrl: publicUrl,
-      creditsLeft: Number(updated?.thumbnail_credits ?? currentCredits - 1),
+      creditsLeft: isOwner ? currentCredits : Math.max(0, currentCredits - 1),
     });
   } catch (error) {
     console.error("Error generando miniatura:", error);
