@@ -135,6 +135,22 @@ export default function RecursosPage() {
             Aprende a exprimir Scripzy: tutorial paso a paso, guías de
             crecimiento y soporte cuando lo necesites.
           </p>
+          <a
+            href="/empezando"
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-950/60 to-fuchsia-950/40 px-5 py-4 transition-colors hover:border-violet-500"
+          >
+            <span>
+              <span className="block text-sm font-bold text-white">
+                🗺️ De cero a tu primer video en 8 pasos
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-400">
+                La secuencia exacta + checklist interactivo de 4 fases
+              </span>
+            </span>
+            <span className="rounded-md bg-violet-600 px-4 py-2 text-xs font-semibold text-white">
+              Ver el mapa →
+            </span>
+          </a>
         </div>
 
         {/* Tutorial */}

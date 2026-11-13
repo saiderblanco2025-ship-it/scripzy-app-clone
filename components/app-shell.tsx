@@ -15,12 +15,14 @@ import {
   Radar,
   Mic,
   Images,
+  Map,
 } from "lucide-react";
 import { getUserBalance, getProfile } from "@/lib/supabase";
 import { UserMenu } from "@/components/user-menu";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, key: "dashboard" },
+  { href: "/empezando", label: "Cómo empezar", icon: Map, key: "empezando" },
   { href: "/script-lab", label: "Script Lab", icon: Sparkles, key: "script-lab" },
   { href: "/voces", label: "Voces IA", icon: Mic, key: "voces" },
   { href: "/biblioteca", label: "Biblioteca", icon: Images, key: "biblioteca" },
