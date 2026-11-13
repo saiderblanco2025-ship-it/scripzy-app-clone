@@ -150,6 +150,9 @@ export default function NichosPage() {
               <Link href="/nichos" className="font-semibold text-white">
                 Nichos
               </Link>
+              <Link href="/miniaturas" className="hover:text-white">
+                Miniaturas
+              </Link>
               <Link href="/pricing" className="hover:text-white">
                 Planes
               </Link>
