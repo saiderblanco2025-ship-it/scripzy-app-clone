@@ -37,6 +37,7 @@ export default function VocesPage() {
 
   const [text, setText] = useState("");
   const [voice, setVoice] = useState("onyx");
+  const [speed, setSpeed] = useState(1.0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditsEmpty, setCreditsEmpty] = useState(false);
@@ -85,7 +86,7 @@ export default function VocesPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${sessionData.session?.access_token ?? ""}`,
         },
-        body: JSON.stringify({ text: t, voice }),
+        body: JSON.stringify({ text: t, voice, speed }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -125,7 +126,8 @@ export default function VocesPage() {
   }
 
   const charCount = text.trim().length;
-  const approxMinutes = charCount > 0 ? Math.max(1, Math.round(charCount / 780)) : 0;
+  const approxMinutes =
+    charCount > 0 ? Math.max(1, Math.round(charCount / (780 * speed))) : 0;
 
   return (
     <AppShell active="voces">
@@ -163,6 +165,33 @@ export default function VocesPage() {
                 rows={12}
                 className="w-full resize-y rounded-md border border-slate-700 bg-slate-950/60 p-4 text-sm leading-relaxed text-slate-200 outline-none placeholder:text-slate-600 focus:border-violet-500"
               />
+
+              {/* Velocidad de narración */}
+              <p className="mt-5 mb-2 text-sm font-semibold text-slate-200">
+                Velocidad
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { v: 0.75, label: "0.75x", hint: "Lento" },
+                  { v: 1.0, label: "1.0x", hint: "Normal" },
+                  { v: 1.25, label: "1.25x", hint: "Rápido" },
+                  { v: 1.5, label: "1.5x", hint: "Muy rápido" },
+                ].map(({ v, label, hint }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setSpeed(v)}
+                    className={`rounded-lg border px-4 py-2 text-center transition-all ${
+                      speed === v
+                        ? "border-violet-500 bg-violet-950/40 ring-1 ring-violet-500/40"
+                        : "border-slate-700 bg-slate-950/40 hover:border-slate-600"
+                    }`}
+                  >
+                    <span className="block text-sm font-bold text-white">{label}</span>
+                    <span className="block text-[10px] text-slate-400">{hint}</span>
+                  </button>
+                ))}
+              </div>
 
               {/* Selector de voz */}
               <p className="mt-5 mb-2 text-sm font-semibold text-slate-200">

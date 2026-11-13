@@ -91,6 +91,10 @@ export async function POST(request: Request) {
       typeof body?.voice === "string" && VOICES.includes(body.voice)
         ? body.voice
         : "onyx";
+    const speed =
+      typeof body?.speed === "number" && Number.isFinite(body.speed)
+        ? Math.min(2.0, Math.max(0.5, body.speed))
+        : 1.0;
 
     if (text.length < 10) {
       return NextResponse.json(
@@ -151,7 +155,7 @@ export async function POST(request: Request) {
           "Content-Type": "application/json",
           [ENGINE_SECRET_HEADER]: ENGINE_SECRET,
         },
-        body: JSON.stringify({ text: chunk, voice }),
+        body: JSON.stringify({ text: chunk, voice, speed }),
         signal: AbortSignal.timeout(58_000),
       });
       if (!res.ok) {
@@ -228,6 +232,7 @@ export async function POST(request: Request) {
       url,
       path: objectPath,
       voice,
+      speed,
       parts: chunks.length,
       sizeBytes: mp3.length,
     });
