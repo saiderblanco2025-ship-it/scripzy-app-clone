@@ -39,6 +39,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black",
     title: "Scripzy",
   },
+  alternates: {
+    canonical: "https://scripzy-app-clone-rwg9.vercel.app",
+  },
 };
 
 export const viewport: Viewport = {
@@ -56,6 +59,33 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Scripzy",
+              url: "https://scripzy-app-clone-rwg9.vercel.app",
+              logo: "https://scripzy-app-clone-rwg9.vercel.app/icon-512.png",
+              description:
+                "Plataforma de creación de contenido para YouTube con IA: guiones largos, nichos con datos reales, miniaturas virales y análisis de patrones.",
+              sameAs: [],
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Scripzy",
+              url: "https://scripzy-app-clone-rwg9.vercel.app",
+              inLanguage: "es",
+            }),
+          }}
+        />
         {children}
       </body>
     </html>

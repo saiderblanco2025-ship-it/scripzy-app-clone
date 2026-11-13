@@ -12,6 +12,10 @@ import {
   Zap,
   ShieldCheck,
   Brain,
+  Mic,
+  Wand2,
+  CircleUserRound,
+  Scissors,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 
@@ -75,24 +79,54 @@ const steps = [
   },
 ];
 
+const roadmap = [
+  {
+    icon: Mic,
+    title: "Voiceover IA con Clone",
+    description:
+      "Narra tus guiones en español con voces naturales, o clona la tuya para sonar como el canal que quieres.",
+  },
+  {
+    icon: Wand2,
+    title: "Copy Style",
+    description:
+      "Analiza cualquier canal de YouTube y replica su estilo de guion en tu próximo video con un clic.",
+  },
+  {
+    icon: CircleUserRound,
+    title: "Avatares IA",
+    description:
+      "Un presentador con tu cara o tu personaje, leyendo tu guion en pantalla en cada video.",
+  },
+  {
+    icon: Scissors,
+    title: "Editor de Video Integrado",
+    description:
+      "Corta, monta y exporta tu video completo dentro de Scripzy — sin abrir otra app.",
+  },
+];
+
 const testimonials = [
   {
     quote:
       "Pasé de escribir 1 guion por semana a 10. El gancho que genera la IA mantiene a la gente mirando hasta el final.",
     name: "Carlos M.",
     role: "Canal de finanzas · 84K suscriptores",
+    metric: "10 guiones por semana",
   },
   {
     quote:
       "El Niche Finder me encontró un nicho con RPM de $18 que no conocía. En 3 meses llegué a monetización.",
     name: "Laura P.",
     role: "Canal faceless · historias",
+    metric: "Monetización en 3 meses",
   },
   {
     quote:
       "Los presets son oro. Configuré mi tono una vez y todos los guiones salen con la misma voz de mi canal.",
     name: "Andrés R.",
     role: "Agencia de contenido",
+    metric: "12 canales gestionados",
   },
 ];
 
@@ -340,6 +374,9 @@ export default function HomePage() {
                 “{t.quote}”
               </p>
               <div className="mt-4">
+                <span className="mb-2 inline-block rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  {t.metric}
+                </span>
                 <p className="text-sm font-semibold text-white">{t.name}</p>
                 <p className="text-xs text-slate-400">{t.role}</p>
               </div>
@@ -469,6 +506,41 @@ export default function HomePage() {
                 <p className="mt-1 text-xs text-emerald-400">todo incluido 🎉</p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Lo que viene (fase 2) ===== */}
+      <section className="border-t border-white/10 px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
+              Roadmap 2026
+            </span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">
+              Lo que viene a Scripzy
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-slate-400">
+              Estamos construyendo la producción completa del video, de idea a
+              upload. Suscríbete y sé de los primeros en probarlo.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {roadmap.map((item) => (
+              <div
+                key={item.title}
+                className="relative rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-center"
+              >
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-500/40 bg-cyan-950 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                  Próximamente
+                </span>
+                <item.icon className="mx-auto mb-3 h-8 w-8 text-cyan-400" />
+                <h3 className="font-bold text-white">{item.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  {item.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
