@@ -24,7 +24,7 @@ import {
   getScriptById,
   type ScriptHistoryItem,
 } from "@/lib/supabase";
-import { UserMenu } from "@/components/user-menu";
+import { AppShell } from "@/components/app-shell";
 
 export default function ScriptLabPage() {
   const router = useRouter();
@@ -197,25 +197,7 @@ export default function ScriptLabPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <h1 className="text-xl font-bold">
-            ⚡ Script Lab
-          </h1>
-          <div className="flex items-center gap-4">
-            <a
-              href="/"
-              className="text-sm text-slate-400 transition-colors hover:text-slate-200"
-            >
-              ← Inicio
-            </a>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
-
+    <AppShell active="script-lab">
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
           {/* Formulario */}
@@ -525,6 +507,6 @@ export default function ScriptLabPage() {
           </section>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { supabase, useUser, getUserBalance } from "@/lib/supabase";
-import { UserMenu } from "@/components/user-menu";
+import { AppShell } from "@/components/app-shell";
 
 type ThumbnailJob = {
   id: string;
@@ -108,39 +108,7 @@ export default function MiniaturasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-fuchsia-950 text-slate-100">
-      {/* Barra superior */}
-      <nav className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 font-bold">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-600 text-sm font-bold text-white">
-                S
-              </span>
-              Scripzy
-            </Link>
-            <div className="hidden items-center gap-4 text-sm text-slate-300 sm:flex">
-              <Link href="/dashboard" className="hover:text-white">
-                Dashboard
-              </Link>
-              <Link href="/script-lab" className="hover:text-white">
-                Script Lab
-              </Link>
-              <Link href="/nichos" className="hover:text-white">
-                Nichos
-              </Link>
-              <Link href="/miniaturas" className="font-semibold text-white">
-                Miniaturas
-              </Link>
-              <Link href="/pricing" className="hover:text-white">
-                Planes
-              </Link>
-            </div>
-          </div>
-          <UserMenu />
-        </div>
-      </nav>
-
+    <AppShell active="miniaturas">
       <main className="mx-auto max-w-7xl px-4 py-8">
         {/* Encabezado */}
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -324,10 +292,6 @@ export default function MiniaturasPage() {
           </div>
         </div>
       </main>
-
-      <footer className="border-t border-slate-800 py-6 text-center text-xs text-slate-600">
-        Scripzy.app — Clone build · Next.js · Supabase · Stripe · n8n · GPT-Image
-      </footer>
-    </div>
+    </AppShell>
   );
 }
