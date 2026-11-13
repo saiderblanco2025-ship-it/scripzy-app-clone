@@ -13,6 +13,7 @@ import {
   Copy,
   Download,
   Check,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { Input } from "@/componentsui/ui/input";
@@ -58,6 +59,11 @@ export default function ScriptLabPage() {
   // Historial de guiones
   const [history, setHistory] = useState<ScriptHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [usageNote, setUsageNote] = useState<{
+    charsUsed: number;
+    balanceAfter: number | null;
+  } | null>(null);
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -78,6 +84,8 @@ export default function ScriptLabPage() {
     setSaveStatus("idle");
     setSaveError(null);
     setViewingHistory(false);
+    setInsufficientCredits(false);
+    setUsageNote(null);
 
     try {
       // Token de sesión para la API (verifica identidad y habilita el cerebro por usuario)
@@ -103,10 +111,25 @@ export default function ScriptLabPage() {
 
       const data = await res.json();
       if (!res.ok) {
+        // Saldo agotado → aviso especial con enlace a planes
+        if (data?.code === "INSUFFICIENT_CREDITS") {
+          setInsufficientCredits(true);
+          throw new Error(
+            data?.message ??
+              "Te quedaste sin caracteres. Sube de plan o compra un pack de recarga."
+          );
+        }
         throw new Error(data?.error || "Error generando el guion");
       }
 
       setScript(data.script as GeneratedScript);
+      // Nota de cobro (tu cuenta de dueño no descuenta)
+      if (typeof data?.charsUsed === "number" && data.charsUsed > 0) {
+        setUsageNote({
+          charsUsed: data.charsUsed,
+          balanceAfter: data?.balanceAfter ?? null,
+        });
+      }
 
       // Auto-guardado en la tabla scripts de Supabase
       const generated = data.script as GeneratedScript;
@@ -366,9 +389,19 @@ export default function ScriptLabPage() {
                 <Alert variant="destructive" className="mt-4">
                   <AlertTitle className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Error
+                    {insufficientCredits ? "Sin créditos" : "Error"}
                   </AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>
+                    {error}
+                    {insufficientCredits && (
+                      <a
+                        href="/pricing"
+                        className="mt-3 block w-full rounded-md bg-violet-600 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+                      >
+                        Ver planes y packs de recarga →
+                      </a>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
             </div>
@@ -421,6 +454,30 @@ export default function ScriptLabPage() {
 
           {/* Resultado */}
           <section className="lg:col-span-3">
+            {usageNote && (
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-violet-500/30 bg-violet-950/30 px-4 py-2.5 text-xs text-violet-300">
+                <Coins className="h-4 w-4 shrink-0" />
+                <span>
+                  <strong>{usageNote.charsUsed.toLocaleString("es")}</strong>{" "}
+                  caracteres descontados
+                  {usageNote.balanceAfter !== null && (
+                    <>
+                      {" "}
+                      · Te quedan{" "}
+                      <strong>
+                        {usageNote.balanceAfter.toLocaleString("es")}
+                      </strong>
+                    </>
+                  )}
+                </span>
+                <a
+                  href="/pricing"
+                  className="ml-auto font-semibold text-violet-200 underline decoration-violet-400/40 hover:text-white"
+                >
+                  Recargar →
+                </a>
+              </div>
+            )}
             {!script && !loading && (
               <div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-10 text-center">
                 <div>

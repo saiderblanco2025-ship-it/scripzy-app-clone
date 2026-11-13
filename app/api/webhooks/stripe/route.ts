@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getPlanConfig, type PlanTier } from "@/lib/stripe-plans";
+import { getPlanConfig, getTopupPack, type PlanTier } from "@/lib/stripe-plans";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,8 +79,47 @@ const eventHandlers: Record<string, (event: Stripe.Event) => Promise<void>> = {
     const session = event.data.object as Stripe.Checkout.Session;
 
     const userId = session.metadata?.user_id;
-    const planTier = (session.metadata?.plan_tier ?? "free") as PlanTier;
     if (!userId) throw new Error("Falta user_id en el payload del webhook");
+
+    // ===== Pago ÚNICO (TOP-UP): sumar créditos al balance =====
+    if (session.mode === "payment") {
+      const packKey = session.metadata?.pack;
+      const pack = packKey ? getTopupPack(packKey) : null;
+      if (!pack) {
+        console.log("⚠️ Pago único sin pack conocido, ignorando", session.id);
+        return;
+      }
+      const admin = getAdmin();
+      const { data: bal } = await admin
+        .from("user_balances")
+        .select("script_character_credits, thumbnail_credits")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const now = new Date().toISOString();
+      const patch: Record<string, number | string> = { updated_at: now };
+      if (pack.kind === "script_chars") {
+        patch.script_character_credits =
+          Number(bal?.script_character_credits ?? 0) + (pack.scriptChars ?? 0);
+      } else {
+        patch.thumbnail_credits =
+          Number(bal?.thumbnail_credits ?? 0) + (pack.thumbnailCredits ?? 0);
+      }
+
+      if (bal) {
+        await admin.from("user_balances").update(patch).eq("user_id", userId);
+      } else {
+        await admin
+          .from("user_balances")
+          .insert({ user_id: userId, ...patch });
+      }
+      console.log(
+        `💰 Webhook: top-up acreditado - usuario ${userId}, pack ${packKey}`
+      );
+      return;
+    }
+
+    const planTier = (session.metadata?.plan_tier ?? "free") as PlanTier;
 
     let subscription: Stripe.Subscription | null = null;
     if (typeof session.subscription === "string") {

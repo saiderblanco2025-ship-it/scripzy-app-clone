@@ -127,3 +127,31 @@ export function getPriceIdForTier(tier: Exclude<PlanTier, "free">): string | nul
 export function isPaidTier(tier: string): tier is Exclude<PlanTier, "free"> {
   return ["starter", "pro", "premium", "ultra"].includes(tier);
 }
+
+// ============================================================
+// PACKS DE RECARGA (TOP-UPS) — pago único, se suman al balance
+// ============================================================
+
+export type TopupKind = "script_chars" | "thumbnail_credits";
+
+export type TopupPack = {
+  key: string;
+  kind: TopupKind;
+  name: string;
+  detail: string;
+  amountUSD: number;
+  scriptChars?: number;
+  thumbnailCredits?: number;
+};
+
+export const TOPUP_PACKS: TopupPack[] = [
+  { key: "chars_500k", kind: "script_chars", name: "500K caracteres", detail: "~14 guiones largos extra · no expiran", amountUSD: 8.99, scriptChars: 500000 },
+  { key: "chars_1m", kind: "script_chars", name: "1M caracteres", detail: "~28 guiones largos extra · no expiran", amountUSD: 14.99, scriptChars: 1000000 },
+  { key: "thumbs_50", kind: "thumbnail_credits", name: "50 miniaturas", detail: "50 miniaturas IA extra · no expiran", amountUSD: 4.99, thumbnailCredits: 50 },
+  { key: "thumbs_200", kind: "thumbnail_credits", name: "200 miniaturas", detail: "200 miniaturas IA extra · no expiran", amountUSD: 19.99, thumbnailCredits: 200 },
+  { key: "thumbs_500", kind: "thumbnail_credits", name: "500 miniaturas", detail: "500 miniaturas IA extra · no expiran", amountUSD: 44.99, thumbnailCredits: 500 },
+];
+
+export function getTopupPack(key: string): TopupPack | null {
+  return TOPUP_PACKS.find((p) => p.key === key) ?? null;
+}

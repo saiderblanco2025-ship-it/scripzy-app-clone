@@ -22,6 +22,72 @@ interface GenerateScriptRequest {
   presetId?: string;
 }
 
+/** Dueño de la app: nunca se le descuenta ni se le bloquea. */
+const OWNER_ID = "77190e6b-75f1-4ebb-b417-5396b654191e";
+
+function getAdminClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return null;
+  return createClient(SUPABASE_URL, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/** Total de caracteres facturables de un guion generado. */
+function countScriptChars(script: GeneratedScript): number {
+  if (script.character_count && script.character_count > 0) {
+    return Math.round(script.character_count);
+  }
+  let n = 0;
+  n += script.title?.length ?? 0;
+  n += script.body?.length ?? 0;
+  const o = script.outline;
+  if (o) {
+    n += o.hook?.length ?? 0;
+    n += (o.retention_points ?? []).join(" ").length;
+    n += o.climax?.length ?? 0;
+    n += o.cta?.length ?? 0;
+    for (const s of o.sections ?? []) {
+      n += (s.title?.length ?? 0) + (s.main_point?.length ?? 0) + (s.duration_estimate?.length ?? 0);
+    }
+  }
+  const seo = script.seo;
+  if (seo) {
+    for (const t of seo.titles ?? []) n += t.length;
+    n += seo.description?.length ?? 0;
+    n += (seo.tags ?? []).join(" ").length;
+  }
+  return n;
+}
+
+/** Cobra caracteres del saldo del usuario. Nunca deja el saldo en negativo. */
+async function chargeScriptCredits(
+  admin: NonNullable<ReturnType<typeof getAdminClient>>,
+  userId: string,
+  charsUsed: number
+): Promise<number | null> {
+  const { data: bal, error } = await admin
+    .from("user_balances")
+    .select("script_character_credits")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !bal) {
+    console.error("[créditos] No se pudo leer balance:", error?.message);
+    return null;
+  }
+  const current = Number(bal.script_character_credits ?? 0);
+  const next = Math.max(0, current - charsUsed);
+  const { error: updErr } = await admin
+    .from("user_balances")
+    .update({ script_character_credits: next, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+  if (updErr) {
+    console.error("[créditos] Error descontando:", updErr.message);
+    return null;
+  }
+  return next;
+}
+
 /** URL del motor de IA en n8n (configurar en Vercel: N8N_SCRIPT_ENGINE_URL). */
 const N8N_ENGINE_URL = process.env.N8N_SCRIPT_ENGINE_URL ?? "";
 
@@ -113,6 +179,61 @@ export async function POST(request: Request) {
     }
     const userId = userData.user.id;
 
+    // ===== Cobro de créditos de guion =====
+    // El dueño nunca paga. El resto necesita saldo (>0) antes de generar.
+    const isOwner = userId === OWNER_ID;
+    const admin = getAdminClient();
+
+    if (!isOwner && admin) {
+      const { data: bal, error: balErr } = await admin
+        .from("user_balances")
+        .select("script_character_credits")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (balErr) {
+        console.error("[créditos] Error leyendo balance (fail-open):", balErr.message);
+      } else {
+        const credits = Number(bal?.script_character_credits ?? 0);
+        if (credits <= 0) {
+          return NextResponse.json(
+            {
+              error: "Te quedaste sin caracteres",
+              code: "INSUFFICIENT_CREDITS",
+              message:
+                "Tu plan se quedó sin caracteres de guion. Sube de plan o compra un pack de recarga para seguir generando.",
+            },
+            { status: 402 }
+          );
+        }
+      }
+    } else if (!isOwner && !admin) {
+      // Sin service role no se puede cobrar: solo registrar.
+      console.warn("[créditos] SUPABASE_SERVICE_ROLE_KEY no configurada — no se cobra");
+    }
+
+    // Respuesta con cobro aplicado (deduplicado entre los dos motores)
+    const respondWithCharge = async (
+      script: GeneratedScript,
+      engine: string,
+      message: string
+    ) => {
+      const charsUsed = countScriptChars(script);
+      let balanceAfter: number | null = null;
+      if (!isOwner && admin) {
+        balanceAfter = await chargeScriptCredits(admin, userId, charsUsed);
+      }
+      return NextResponse.json({
+        script,
+        progress: 100,
+        engine,
+        message,
+        charsUsed: isOwner ? 0 : charsUsed,
+        balanceAfter,
+        charged: !isOwner && admin !== null,
+      });
+    };
+
     // Motor de IA real (n8n)
     const aiScript = await generateWithN8nEngine({
       topic,
@@ -124,12 +245,11 @@ export async function POST(request: Request) {
     });
 
     if (aiScript) {
-      return NextResponse.json({
-        script: aiScript,
-        progress: 100,
-        engine: "ai-n8n",
-        message: "Guion generado con IA real",
-      });
+      return respondWithCharge(
+        aiScript,
+        "ai-n8n",
+        "Guion generado con IA real"
+      );
     }
 
     // Motor local de demostración (fallback)
@@ -146,12 +266,11 @@ export async function POST(request: Request) {
       onChunk
     );
 
-    return NextResponse.json({
+    return respondWithCharge(
       script,
-      progress: 100,
-      engine: "local-demo",
-      message: "Guion generado con el motor local (IA de n8n no disponible)",
-    });
+      "local-demo",
+      "Guion generado con el motor local (IA de n8n no disponible)"
+    );
   } catch (error) {
     console.error("Error generando guion:", error);
     return NextResponse.json(
