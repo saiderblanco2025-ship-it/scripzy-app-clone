@@ -58,44 +58,54 @@ async function phase1GenerateOutline(
   topic: string,
   language: string,
   tone: string,
-  targetAudience: string
+  targetAudience: string,
+  videoLength: string = "30"
 ): Promise<ScriptOutline> {
+  const isLong = videoLength === "30";
+  const isStd = videoLength === "20";
+  const sections = isLong
+    ? [
+        { title: "Introducción", main_point: `Enganchar al espectador con la promesa central de ${topic}`, duration_estimate: "00:00-02:00" },
+        { title: "Contexto y problema", main_point: `Por qué ${topic} importa hoy y qué está en juego`, duration_estimate: "02:00-04:30" },
+        { title: "Desarrollo - Punto clave 1", main_point: `El argumento principal sobre ${topic} con ejemplos concretos`, duration_estimate: "04:30-08:00" },
+        { title: "Las escenas que cambiaron todo", main_point: `Los momentos decisivos de ${topic} con detalles que casi nadie conoce`, duration_estimate: "08:00-11:00" },
+        { title: "Desarrollo - Punto clave 2", main_point: `El giro contraintuitivo que rompe las creencias comunes sobre ${topic}`, duration_estimate: "11:00-14:30" },
+        { title: "El giro", main_point: `El punto donde todo cambia — el insight que redefine ${topic}`, duration_estimate: "14:30-17:30" },
+        { title: "Desarrollo - Punto clave 3", main_point: `Lo que casi nadie te dice sobre ${topic}`, duration_estimate: "17:30-21:00" },
+        { title: "Implicaciones para hoy", main_point: `Qué significa ${topic} para tu canal o tu vida ahora`, duration_estimate: "21:00-24:00" },
+        { title: "Clímax y clímax final", main_point: "La gran revelación + momentos de mayor tensión del video", duration_estimate: "24:00-27:30" },
+        { title: "CTA y cierre", main_point: "Respuesta final a la pregunta inicial + llamada a la acción", duration_estimate: "27:30-30:00" },
+      ]
+    : isStd
+    ? [
+        { title: "Introducción", main_point: `Enganchar al espectador con la promesa central de ${topic}`, duration_estimate: "00:00-01:00" },
+        { title: "Contexto y problema", main_point: `Por qué ${topic} importa hoy`, duration_estimate: "01:00-03:00" },
+        { title: "Desarrollo - Punto clave 1", main_point: `El argumento principal sobre ${topic} con ejemplos`, duration_estimate: "03:00-06:00" },
+        { title: "Desarrollo - Punto clave 2", main_point: `El giro contraintuitivo que rompe las creencias sobre ${topic}`, duration_estimate: "06:00-09:00" },
+        { title: "Desarrollo - Punto clave 3", main_point: `La parte que casi nadie comparte sobre ${topic}`, duration_estimate: "09:00-12:00" },
+        { title: "Subida de tensión", main_point: `El momento donde todo cambia sobre ${topic}`, duration_estimate: "12:00-15:30" },
+        { title: "Clímax y CTA", main_point: "Revelación final + llamada a la acción", duration_estimate: "15:30-18:30" },
+      ]
+    : /* video corto 12 min */ [
+        { title: "Introducción", main_point: `Enganchar al espectador con la promesa central de ${topic}`, duration_estimate: "00:00-00:30" },
+        { title: "Contexto y problema", main_point: `Por qué ${topic} importa hoy y qué está en juego`, duration_estimate: "00:30-01:30" },
+        { title: "Desarrollo - Punto clave 1", main_point: `El argumento principal sobre ${topic} con ejemplos concretos`, duration_estimate: "01:30-03:00" },
+        { title: "Desarrollo - Punto clave 2", main_point: "El giro contraintuitivo que rompe las creencias comunes", duration_estimate: "03:00-06:00" },
+        { title: "Clímax y CTA", main_point: "Revelación final + llamada a la acción", duration_estimate: "06:00-08:00" },
+      ];
+
   return {
     hook: `[GANCHO 0-30s] Lo que nadie te contó sobre ${topic}: en los próximos minutos vas a descubrir exactamente por qué ${targetAudience} están cambiando su forma de ver esto.`,
     retention_points: [
       `Minuto 1: Entrega temprana de valor sobre ${topic}`,
-      "Minuto 2: Transición de historia inesperada",
-      "Minuto 3: Insight contraintuitivo que nadie espera",
+      "Minuto 2: Historia inesperada",
+      "Minuto 5: Insight contraintuitivo",
+      "Minuto 12: Vuelta de tuerca inesperada",
+      "Minuto 22: La revelación que nadie esperaba",
     ],
     climax: `La revelación final: ${topic} no es lo que creías, y te muestro la prueba.`,
     cta: "Suscríbete y comenta qué punto te sorprendió más.",
-    sections: [
-      {
-        title: "Introducción",
-        main_point: `Enganchar al espectador con la promesa central de ${topic}`,
-        duration_estimate: "00:00-00:30",
-      },
-      {
-        title: "Contexto y problema",
-        main_point: `Por qué ${topic} importa hoy y qué está en juego`,
-        duration_estimate: "00:30-01:30",
-      },
-      {
-        title: "Desarrollo - Punto clave 1",
-        main_point: `El argumento principal sobre ${topic} con ejemplos concretos`,
-        duration_estimate: "01:30-02:30",
-      },
-      {
-        title: "Desarrollo - Punto clave 2",
-        main_point: "El giro contraintuitivo que rompe las creencias comunes",
-        duration_estimate: "02:30-03:30",
-      },
-      {
-        title: "Clímax y CTA",
-        main_point: "Revelación final + llamada a la acción",
-        duration_estimate: "03:30-04:30",
-      },
-    ],
+    sections,
   };
 }
 
@@ -206,10 +216,11 @@ export async function generateScriptPipeline(
   tone: string = "engaging",
   targetAudience: string = "creadores de contenido",
   forbiddenWords: string[] = [],
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  videoLength: string = "30"
 ): Promise<GeneratedScript> {
   if (onProgress) onProgress(15);
-  const outline = await phase1GenerateOutline(topic, language, tone, targetAudience);
+  const outline = await phase1GenerateOutline(topic, language, tone, targetAudience, videoLength);
 
   if (onProgress) onProgress(30);
   const seo = await phase2GenerateSeo(topic, outline, language);
@@ -248,7 +259,8 @@ export async function generateScriptStreaming(
   tone: string = "engaging",
   targetAudience: string = "creadores de contenido",
   forbiddenWords: string[] = [],
-  onChunk: (chunk: string, phase: number) => void
+  onChunk: (chunk: string, phase: number) => void,
+  videoLength: string = "30"
 ): Promise<GeneratedScript> {
   const script: GeneratedScript = {
     id: makeId("stream"),
@@ -269,7 +281,13 @@ export async function generateScriptStreaming(
   try {
     // Fase 1: Outline
     onChunk("🔨 Generando outline y puntos de tensión...", 1);
-    const outline = await phase1GenerateOutline(topic, language, tone, targetAudience);
+    const outline = await phase1GenerateOutline(
+      topic,
+      language,
+      tone,
+      targetAudience,
+      videoLength
+    );
     script.outline = outline;
     onChunk("✅ Outline listo\n", 1);
 

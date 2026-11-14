@@ -20,6 +20,7 @@ interface GenerateScriptRequest {
   targetAudience?: string;
   forbiddenWords?: string[];
   presetId?: string;
+  videoLength?: string;
 }
 
 /** Dueño de la app: nunca se le descuenta ni se le bloquea. */
@@ -102,6 +103,7 @@ async function generateWithN8nEngine(params: {
   targetAudience: string;
   forbiddenWords: string[];
   userId: string;
+  videoLength: string;
 }): Promise<GeneratedScript | null> {
   if (!N8N_ENGINE_URL) return null;
 
@@ -119,6 +121,7 @@ async function generateWithN8nEngine(params: {
         targetAudience: params.targetAudience,
         forbiddenWords: params.forbiddenWords,
         userId: params.userId,
+        videoLength: params.videoLength,
       }),
       signal: AbortSignal.timeout(280_000),
     });
@@ -157,7 +160,13 @@ export async function POST(request: Request) {
       targetAudience = "creadores de contenido",
       forbiddenWords = [],
       presetId,
+      videoLength = "30",
     } = body as GenerateScriptRequest;
+
+    // Duración objetivo del video: "30" (~30 min documental), "20", "12"
+    const videoLen = ["12", "20", "30"].includes(String(videoLength))
+      ? String(videoLength)
+      : "30";
 
     if (!topic || typeof topic !== "string") {
       return NextResponse.json(
@@ -242,6 +251,7 @@ export async function POST(request: Request) {
       targetAudience,
       forbiddenWords,
       userId,
+      videoLength: videoLen,
     });
 
     if (aiScript) {
@@ -263,7 +273,8 @@ export async function POST(request: Request) {
       tone,
       targetAudience,
       forbiddenWords,
-      onChunk
+      onChunk,
+      videoLen
     );
 
     return respondWithCharge(

@@ -44,6 +44,7 @@ export default function ScriptLabPage() {
   const [topic, setTopic] = useState("");
   const [language, setLanguage] = useState("es");
   const [tone, setTone] = useState("engaging");
+  const [videoLength, setVideoLength] = useState("30");
   const [targetAudience, setTargetAudience] = useState("creadores de contenido");
   const [forbiddenWords, setForbiddenWords] = useState("");
 
@@ -147,6 +148,7 @@ export default function ScriptLabPage() {
           language,
           tone,
           targetAudience,
+          videoLength,
           forbiddenWords: forbiddenWords
             .split(",")
             .map((w) => w.trim())
@@ -388,6 +390,27 @@ export default function ScriptLabPage() {
                       <SelectOption value="entertaining">Entertaining</SelectOption>
                     </Select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm text-slate-300">
+                    Duración del video
+                  </label>
+                  <Select
+                    value={videoLength}
+                    onChange={(e) => setVideoLength(e.target.value)}
+                    disabled={loading}
+                  >
+                    <SelectOption value="30">
+                      30 min — Documental completo (recomendado)
+                    </SelectOption>
+                    <SelectOption value="20">20 min — Estándar</SelectOption>
+                    <SelectOption value="12">12 min — Rápido</SelectOption>
+                  </Select>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    El guion se adapta: para 30 min son ~4,300–5,200 palabras
+                    con retención cada 2–3 minutos y 8–10 secciones.
+                  </p>
                 </div>
 
                 <div>
