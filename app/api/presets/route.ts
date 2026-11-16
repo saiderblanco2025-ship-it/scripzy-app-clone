@@ -137,6 +137,10 @@ export async function POST(request: Request) {
         por_que_funciona: p?.por_que_funciona ?? "",
         ideas_video: Array.isArray(p?.ideas_video) ? p.ideas_video : [],
         verdict: p?.verdict ?? "",
+        target_minutes:
+          typeof body?.targetMinutes === "number" && body.targetMinutes > 0
+            ? Math.round(body.targetMinutes)
+            : null,
         analyzed_channel: body?.channelName ?? null,
         analyzed_url: body?.channelUrl ?? null,
         monetization: body?.monetization ?? null,

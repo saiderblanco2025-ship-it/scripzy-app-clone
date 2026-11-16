@@ -394,15 +394,25 @@ export default function ScriptLabPage() {
 
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm text-slate-300">
-                    Tema del video
+                  <label className="mb-1 flex items-center justify-between text-sm text-slate-300">
+                    <span>Tema del video</span>
+                    <span
+                      className={`text-[11px] tabular-nums ${
+                        topic.length > 380 ? "text-amber-400" : "text-slate-500"
+                      }`}
+                    >
+                      {topic.length}/400
+                    </span>
                   </label>
                   <Input
                     value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
+                    onChange={(e) => setTopic(e.target.value.slice(0, 400))}
                     placeholder="Ej: Cómo los piratas modernos ganan millones"
                     disabled={loading}
                   />
+                  <p className="mt-1 text-[10px] text-slate-600">
+                    Máx. 400 caracteres. Cuanto más específico, mejor el guion.
+                  </p>
                 </div>
 
                 {/* Selector de preset */}
