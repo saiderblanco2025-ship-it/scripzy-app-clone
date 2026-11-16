@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -46,6 +47,18 @@ export default function ScriptLabPage() {
   const [tone, setTone] = useState("engaging");
   const [videoLength, setVideoLength] = useState("30");
   const [targetAudience, setTargetAudience] = useState("creadores de contenido");
+  const [presets, setPresets] = useState<
+    Array<{
+      id: string;
+      name: string;
+      tone: string;
+      pacing: string;
+      target_niche: string | null;
+      audience_profile: string | null;
+      forbidden_words: string[];
+    }>
+  >([]);
+  const [selectedPresetId, setSelectedPresetId] = useState("");
   const [forbiddenWords, setForbiddenWords] = useState("");
 
   // Estado de generación
@@ -73,6 +86,23 @@ export default function ScriptLabPage() {
 
   useEffect(() => {
     if (!user) return;
+    // Cargar presets del usuario (cada preset aplica su estilo al guion)
+    (async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const res = await fetch("/api/presets", {
+          headers: {
+            Authorization: `Bearer ${sessionData.session?.access_token ?? ""}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPresets(data.presets ?? []);
+        }
+      } catch {
+        /* sin presets */
+      }
+    })();
     setHistoryLoading(true);
     listMyScripts(user.id).then((items) => {
       setHistory(items);
@@ -119,6 +149,19 @@ export default function ScriptLabPage() {
     if (fa !== fb) return fa - fb;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+
+  // Aplica los valores del preset elegido al formulario
+  function applyPreset(id: string) {
+    setSelectedPresetId(id);
+    if (!id) return;
+    const p = presets.find((x) => x.id === id);
+    if (!p) return;
+    if (p.tone) setTone(p.tone);
+    if (p.audience_profile) setTargetAudience(p.audience_profile);
+    if (Array.isArray(p.forbidden_words) && p.forbidden_words.length) {
+      setForbiddenWords(p.forbidden_words.join(", "));
+    }
+  }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -360,6 +403,33 @@ export default function ScriptLabPage() {
                     placeholder="Ej: Cómo los piratas modernos ganan millones"
                     disabled={loading}
                   />
+                </div>
+
+                {/* Selector de preset */}
+                <div>
+                  <label className="mb-1 flex items-center justify-between gap-2 text-sm text-slate-300">
+                    <span>Preset (estilo guardado)</span>
+                    <Link href="/presets" className="text-[10px] font-semibold uppercase tracking-wider text-amber-400 hover:text-amber-300">
+                      + Analizar canal
+                    </Link>
+                  </label>
+                  <Select
+                    value={selectedPresetId}
+                    onChange={(e) => applyPreset(e.target.value)}
+                    disabled={loading}
+                  >
+                    <SelectOption value="">(Sin preset — escribo mi estilo)</SelectOption>
+                    {presets.map((p) => (
+                      <SelectOption key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectOption>
+                    ))}
+                  </Select>
+                  {selectedPresetId && (
+                    <p className="mt-1.5 flex flex-wrap gap-1.5 text-[10px]">
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-400">✨ Preset aplicado al tono, audiencia y palabras prohibidas</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
