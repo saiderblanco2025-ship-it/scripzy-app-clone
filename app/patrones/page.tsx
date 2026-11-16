@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Search, TrendingUp, Lightbulb, Eye } from "lucide-react";
+import { Loader2, Search, TrendingUp, Lightbulb, Eye, ExternalLink } from "lucide-react";
 import { Button } from "@/componentsui/ui/button";
 import { supabase, useUser } from "@/lib/supabase";
 import { AppShell } from "@/components/app-shell";
@@ -15,6 +15,22 @@ type Pattern = {
   porque_funciona: string;
   como_aplicar: string;
 };
+
+type VideoTop = {
+  videoId: string;
+  titulo: string;
+  canal: string;
+  vistas: number;
+  subs: number;
+  thumbnail: string;
+  url: string;
+};
+
+function fmtCompact(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(".0", "") + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(".0", "") + "K";
+  return String(n);
+}
 
 export default function PatronesPage() {
   const router = useRouter();
@@ -30,6 +46,7 @@ export default function PatronesPage() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [videosAnalyzed, setVideosAnalyzed] = useState<number | null>(null);
   const [searchedKeyword, setSearchedKeyword] = useState("");
+  const [videos, setVideos] = useState<VideoTop[]>([]);
 
   async function search(term?: string) {
     const kw = (term ?? keyword).trim();
@@ -38,6 +55,7 @@ export default function PatronesPage() {
     setError(null);
     setPatterns([]);
     setVideosAnalyzed(null);
+    setVideos([]);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const res = await fetch("/api/patrones", {
@@ -52,6 +70,7 @@ export default function PatronesPage() {
       if (!res.ok) throw new Error(data?.error || "Error analizando patrones");
       setPatterns(data.patterns ?? []);
       setVideosAnalyzed(data.videosAnalyzed ?? null);
+      setVideos(data.videos ?? []);
       setSearchedKeyword(kw);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -177,6 +196,51 @@ export default function PatronesPage() {
                 </div>
               ))}
             </div>
+
+            {/* Referencias reales de YouTube */}
+            {videos.length > 0 && (
+              <div className="mt-8">
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  <ExternalLink className="h-4 w-4 text-violet-400" />
+                  Referencias reales de YouTube — estudia a los que ya ganan
+                </h2>
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {videos.map((v) => (
+                    <a
+                      key={v.videoId}
+                      href={v.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 transition-colors hover:border-violet-500/50"
+                    >
+                      <div className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={v.thumbnail}
+                          alt={v.titulo}
+                          className="aspect-video w-full object-cover"
+                          loading="lazy"
+                        />
+                        <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                          {fmtCompact(v.vistas)} vistas
+                        </span>
+                      </div>
+                      <div className="p-3">
+                        <p className="line-clamp-2 min-h-[2.5rem] text-xs font-semibold text-slate-200 group-hover:text-white">
+                          {v.titulo}
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          {v.canal} · {fmtCompact(v.subs)} subs
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-violet-400 group-hover:text-violet-300">
+                          Ver en YouTube <ExternalLink className="h-3 w-3" />
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
